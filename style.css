@@ -1231,3 +1231,525 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ================= MINI-GAME STYLES (TIMELINE & CIPHER) ================= */
+
+/* Start Screen Mini-Game Trigger Badge */
+.btn-minigame-tag {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.28) 0%, rgba(180, 83, 9, 0.45) 100%) !important;
+  border: 1px solid var(--gold-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.35) !important;
+  margin-top: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-minigame-tag:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.5) 0%, rgba(180, 83, 9, 0.7) 100%) !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.6) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+.btn-secondary-mode {
+  background: rgba(40, 30, 26, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: var(--parchment);
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-secondary-mode:hover {
+  background: rgba(60, 42, 36, 0.95);
+  border-color: var(--gold-glow);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Container Chung Cho Mini-Games */
+.minigame-container {
+  width: 94%;
+  max-width: 1240px;
+  height: 90vh;
+  margin: 3vh auto;
+  background: linear-gradient(180deg, rgba(24, 17, 15, 0.94) 0%, rgba(14, 10, 9, 0.97) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(245, 158, 11, 0.2);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 28px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 25;
+}
+
+/* Header HUD */
+.minigame-header-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.minigame-title-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.minigame-title-badge .badge-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+}
+
+.badge-sub {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.badge-main-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.minigame-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.minigame-score-box {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--gold-primary);
+  border-radius: 12px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minigame-score-box span {
+  font-size: 0.8rem;
+  color: var(--parchment-dim);
+  font-weight: 700;
+}
+
+.minigame-score-box strong {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  color: var(--gold-glow);
+}
+
+.cipher-remaining-pill {
+  background: linear-gradient(135deg, rgba(183, 28, 28, 0.7), rgba(40, 20, 18, 0.85));
+  border: 1px solid var(--gold-primary);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-glow);
+  box-shadow: 0 0 15px rgba(255, 87, 34, 0.4);
+}
+
+.btn-minigame-exit {
+  background: rgba(30, 20, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--parchment-dim);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-minigame-exit:hover {
+  background: rgba(183, 28, 28, 0.8);
+  color: #fff;
+  border-color: #ff5722;
+}
+
+/* Dải Hướng Dẫn */
+.minigame-instruction-bar {
+  background: rgba(255, 215, 0, 0.08);
+  border-left: 4px solid var(--gold-primary);
+  padding: 10px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 14px 0 16px 0;
+  font-size: 0.9rem;
+  color: var(--parchment);
+}
+
+/* ================= MÀN 1: TRỤC THỜI GIAN ================= */
+.timeline-track-wrapper {
+  position: relative;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 24px 18px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.timeline-axis-line {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 20px;
+  height: 4px;
+  background: linear-gradient(90deg, #ffd700 0%, #ff5722 50%, #ffd700 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  z-index: 1;
+}
+
+.timeline-slots-grid {
+  display: flex;
+  justify-content: space-around;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
+  min-width: 680px;
+}
+
+.timeline-slot-dropzone {
+  flex: 1;
+  min-width: 130px;
+  max-width: 220px;
+  background: rgba(20, 14, 12, 0.92);
+  border: 2px dashed rgba(212, 175, 55, 0.45);
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.timeline-slot-dropzone:hover,
+.timeline-slot-dropzone.drag-over {
+  border-color: var(--gold-glow);
+  background: rgba(45, 30, 24, 0.95);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.35);
+}
+
+.timeline-slot-dropzone.completed {
+  border: 2px solid #4caf50;
+  background: rgba(20, 35, 22, 0.92);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+}
+
+.slot-year-tag {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--gold-glow);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  width: 100%;
+  text-align: center;
+}
+
+.slot-drop-target {
+  width: 100%;
+  min-height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.slot-placeholder-hint {
+  font-size: 0.82rem;
+  color: rgba(207, 194, 168, 0.5);
+  line-height: 1.3;
+  font-style: italic;
+}
+
+/* Dock Sự Kiện Cần Xếp */
+.timeline-dock-wrapper {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  padding: 16px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  color: var(--gold-primary);
+  font-weight: 800;
+}
+
+.dock-header small {
+  color: var(--parchment-dim);
+  font-weight: normal;
+}
+
+.timeline-cards-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-event-card {
+  background: linear-gradient(135deg, rgba(42, 28, 24, 0.95) 0%, rgba(26, 18, 16, 0.98) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: grab;
+  max-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+.timeline-event-card:hover {
+  border-color: var(--gold-glow);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 22px rgba(255, 193, 7, 0.35);
+}
+
+.timeline-event-card.selected {
+  border-color: #ffeb3b;
+  box-shadow: 0 0 20px #ffeb3b, inset 0 0 10px rgba(255, 235, 59, 0.3);
+  transform: translateY(-5px) scale(1.04);
+}
+
+.timeline-event-card.dragging {
+  opacity: 0.4;
+}
+
+.timeline-event-card.slotted-success {
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: default;
+  padding: 4px;
+}
+
+.timeline-event-card.slotted-success .card-desc-text {
+  font-size: 0.78rem;
+  color: #c8e6c9;
+  font-weight: 600;
+  text-align: center;
+}
+
+.card-desc-text {
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--parchment);
+}
+
+.card-badge-icon {
+  font-size: 1.2rem;
+}
+
+/* ================= MÀN 2: GIẢI MÃ ĐIỆN TÍN ================= */
+.cipher-columns-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cipher-col-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cipher-col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: 12px;
+}
+
+.cipher-col-header h4 {
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  color: var(--gold-primary);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.cipher-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cipher-card-item {
+  background: linear-gradient(135deg, rgba(35, 24, 21, 0.92) 0%, rgba(20, 14, 12, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.cipher-card-item:hover {
+  border-color: var(--gold-glow);
+  transform: translateX(4px);
+  box-shadow: 0 6px 18px rgba(255, 193, 7, 0.25);
+}
+
+.cipher-card-item.selected {
+  border-color: #ffeb3b;
+  background: linear-gradient(135deg, rgba(70, 45, 25, 0.95) 0%, rgba(45, 30, 20, 0.98) 100%);
+  box-shadow: 0 0 18px rgba(255, 235, 59, 0.6);
+  transform: scale(1.02);
+}
+
+.cipher-card-item.matched-success {
+  border-color: #4caf50;
+  background: rgba(30, 60, 35, 0.9);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.cipher-icon {
+  font-size: 1.5rem;
+}
+
+.cipher-text-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cipher-text-meta strong {
+  font-size: 0.9rem;
+  color: #fff;
+  font-family: var(--font-heading);
+}
+
+.cipher-text-meta small {
+  font-size: 0.78rem;
+  color: var(--parchment-dim);
+  line-height: 1.3;
+}
+
+/* Feed Báo Cáo Đã Giải Mã */
+.cipher-decoded-wrapper {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 14px;
+  padding: 14px 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.decoded-header {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--gold-glow);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.decoded-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.decoded-report-card {
+  background: linear-gradient(135deg, rgba(25, 35, 25, 0.92) 0%, rgba(15, 25, 18, 0.95) 100%);
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeInReport 0.4s ease;
+}
+
+.report-stamp {
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.decoded-report-card p {
+  font-size: 0.84rem;
+  color: #e8f5e9;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Animations */
+.error-shake {
+  animation: errorShakeKeyframes 0.45s ease;
+  border-color: #f44336 !important;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.7) !important;
+}
+
+@keyframes errorShakeKeyframes {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+@keyframes fadeInReport {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .cipher-columns-grid {
+    grid-template-columns: 1fr;
+  }
+  .minigame-container {
+    height: 95vh;
+    padding: 14px;
+  }
+}

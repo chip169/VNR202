@@ -54,6 +54,7 @@ class HistoricalQuizApp {
     this.scoreDisplay = document.getElementById('player-score');
     this.comboBadge = document.getElementById('combo-badge');
     
+    this.miniGame = new MiniGameEngine(this);
     this.initParallax();
     this.initLobbySimulation();
     this.bindEvents();
@@ -209,7 +210,17 @@ class HistoricalQuizApp {
       this.openLobby();
     });
 
-    // Nút Chế độ Chiến Dịch
+    // Nút Mini-game Mật Thư & Dòng Thời Gian từ Start Screen
+    const miniGameBtn = document.getElementById('btn-mode-minigame');
+    if (miniGameBtn) {
+      miniGameBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        soundEngine.startAmbient();
+        this.miniGame.startTimelineGame();
+      });
+    }
+
+    // Nút Chế độ Chiến Dịch (100 câu trắc nghiệm)
     const campaignBtn = document.getElementById('btn-mode-campaign');
     if (campaignBtn) {
       campaignBtn.addEventListener('click', () => {
@@ -220,12 +231,37 @@ class HistoricalQuizApp {
       });
     }
 
-    // Nút Bắt đầu thi đấu từ Sảnh Chờ
+    // Nút Bắt đầu Mini-Game từ Sảnh Chờ
     const startBattleBtn = document.getElementById('btn-start-lobby-game');
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
         soundEngine.playClick();
+        this.miniGame.startTimelineGame();
+      });
+    }
+
+    // Nút Bắt đầu Đấu Trắc Nghiệm từ Sảnh Chờ
+    const lobbyQuizBtn = document.getElementById('btn-lobby-start-quiz');
+    if (lobbyQuizBtn) {
+      lobbyQuizBtn.addEventListener('click', () => {
+        soundEngine.playClick();
         this.startQuizBattle();
+      });
+    }
+
+    // Nút Thoát Mini-Game quay về Màn hình chính
+    const tlBack = document.getElementById('btn-timeline-back');
+    if (tlBack) {
+      tlBack.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.switchScreen('start-screen');
+      });
+    }
+    const cpBack = document.getElementById('btn-cipher-back');
+    if (cpBack) {
+      cpBack.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.switchScreen('start-screen');
       });
     }
 

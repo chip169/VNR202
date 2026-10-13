@@ -81,9 +81,14 @@
             <span class="btn-spark-particle spark-2">✦</span>
           </button>
 
-          <!-- Chế độ Chơi Chiến Dịch Lịch Sử -->
+          <!-- Chế độ Chơi Mini-Game Mật Thư & Trục Thời Gian -->
+          <button class="btn-sub-campaign-tag btn-minigame-tag" id="btn-mode-minigame">
+            🧩 Mini-Game: Mật Thư & Trục Thời Gian
+          </button>
+
+          <!-- Chế độ Chơi Trắc Nghiệm 100 Câu -->
           <button class="btn-sub-campaign-tag" id="btn-mode-campaign">
-            📖 Chiến Dịch Lịch Sử (Single Player)
+            📖 Trắc Nghiệm 100 Câu Lịch Sử Đảng
           </button>
         </div>
       </div>
@@ -123,13 +128,124 @@
 
           <div class="lobby-footer">
             <button class="btn-secondary" id="btn-lobby-back">⬅ Quay Lại</button>
-            <button class="btn-primary-start" id="btn-start-lobby-game">⚡ BẮT ĐẦU TRANH TÀI</button>
+            <button class="btn-secondary-mode" id="btn-lobby-start-quiz">📖 Đấu Trắc Nghiệm</button>
+            <button class="btn-primary-start" id="btn-start-lobby-game">🧩 ĐUA MINI-GAME MẬT THƯ</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= 3. ĐẤU TRƯỜNG ĐỐ VUI (BATTLE ARENA) ================= -->
+    <!-- ================= 3. MINI-GAME MÀN 1: KÉO THẢ DÒNG THỜI GIAN ================= -->
+    <section id="timeline-game-screen" class="screen">
+      <div class="minigame-container">
+        <!-- Top HUD -->
+        <div class="minigame-header-hud">
+          <div class="minigame-title-badge">
+            <span class="badge-icon">⏳</span>
+            <div>
+              <div class="badge-sub">MÀN 1: TRỤC THỜI GIAN LỊCH SỬ</div>
+              <h3 id="timeline-stage-title" class="badge-main-title">Chặng 1: Hành Trình Cứu Nước (1911 - 1925)</h3>
+            </div>
+          </div>
+          <div class="minigame-stats-row">
+            <div class="minigame-score-box">
+              <span>ĐIỂM:</span>
+              <strong id="timeline-score-val">0đ</strong>
+            </div>
+            <button class="btn-minigame-exit" id="btn-timeline-back" title="Về Màn Hình Chính">✖ Rời Game</button>
+          </div>
+        </div>
+
+        <!-- Hướng dẫn cách chơi -->
+        <div class="minigame-instruction-bar">
+          <span>💡 <strong>Cách chơi:</strong> Chọn thẻ sự kiện bên dưới rồi bấm vào mốc năm tương ứng trên trục thời gian (hoặc kéo thả chuột trực tiếp).</span>
+        </div>
+
+        <!-- Trục thời gian (Timeline Track) -->
+        <div class="timeline-track-wrapper">
+          <div class="timeline-axis-line"></div>
+          <div class="timeline-slots-grid" id="timeline-track-slots">
+            <!-- Sinh tự động từ minigames.js -->
+          </div>
+        </div>
+
+        <!-- Kho sự kiện cần sắp xếp (Draggable Cards Dock) -->
+        <div class="timeline-dock-wrapper">
+          <div class="dock-header">
+            <span>📜 CÁC SỰ KIỆN LỊCH SỬ CẦN ĐỊNH VỊ:</span>
+            <small>Chạm thẻ để chọn ➜ Chạm mốc thời gian</small>
+          </div>
+          <div class="timeline-cards-flex" id="timeline-cards-dock">
+            <!-- Sinh tự động từ minigames.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. MINI-GAME MÀN 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG ================= -->
+    <section id="cipher-game-screen" class="screen">
+      <div class="minigame-container">
+        <!-- Top HUD -->
+        <div class="minigame-header-hud">
+          <div class="minigame-title-badge">
+            <span class="badge-icon">📻</span>
+            <div>
+              <div class="badge-sub">MÀN 2: GIẢI MÃ ĐIỆN TÍN HỘI NGHỊ CỬU LONG</div>
+              <h3 class="badge-main-title">Ghép Bộ Ba Tư Liệu: Nhân Vật ➜ Tác Phẩm/Sự Kiện ➜ Địa Bàn</h3>
+            </div>
+          </div>
+          <div class="minigame-stats-row">
+            <div class="cipher-remaining-pill" id="cipher-remaining-badge">Còn 5 Bức Điện Mật</div>
+            <button class="btn-minigame-exit" id="btn-cipher-back" title="Về Màn Hình Chính">✖ Rời Game</button>
+          </div>
+        </div>
+
+        <!-- Hướng dẫn cách chơi -->
+        <div class="minigame-instruction-bar">
+          <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện]</em> + <em>[Địa Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long!</span>
+        </div>
+
+        <!-- 3 Cột Ghép Nối -->
+        <div class="cipher-columns-grid">
+          <!-- Cột 1: Nhân Vật -->
+          <div class="cipher-col-card">
+            <div class="cipher-col-header">
+              <span class="col-icon">👤</span>
+              <h4>1. NHÂN VẬT LỊCH SỬ</h4>
+            </div>
+            <div class="cipher-cards-list" id="cipher-col-heroes"></div>
+          </div>
+
+          <!-- Cột 2: Tác Phẩm / Sự Kiện -->
+          <div class="cipher-col-card">
+            <div class="cipher-col-header">
+              <span class="col-icon">⚡</span>
+              <h4>2. TÁC PHẨM / SỰ KIỆN</h4>
+            </div>
+            <div class="cipher-cards-list" id="cipher-col-events"></div>
+          </div>
+
+          <!-- Cột 3: Địa Bàn / Mốc Thời Gian -->
+          <div class="cipher-col-card">
+            <div class="cipher-col-header">
+              <span class="col-icon">📍</span>
+              <h4>3. ĐỊA BÀN HOẠT ĐỘNG</h4>
+            </div>
+            <div class="cipher-cards-list" id="cipher-col-locales"></div>
+          </div>
+        </div>
+
+        <!-- Danh sách bức điện đã giải mã thành công -->
+        <div class="cipher-decoded-wrapper">
+          <div class="decoded-header">
+            <span>📜 BÁO CÁO MẬT ĐÃ GIẢI MÃ THÀNH CÔNG:</span>
+          </div>
+          <div class="decoded-feed-list" id="cipher-decoded-feed"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. ĐẤU TRƯỜNG ĐỐ VUI (BATTLE ARENA) ================= -->
     <section id="battle-screen" class="screen">
       <div class="battle-arena-wrapper">
         <!-- Header HUD trận đấu -->
@@ -223,6 +339,7 @@
   <script src="questions.js"></script>
   <script src="sound.js"></script>
   <script src="particles.js"></script>
+  <script src="minigames.js"></script>
   <script src="app.js"></script>
 </body>
 
