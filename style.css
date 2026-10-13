@@ -689,12 +689,12 @@ body {
 }
 
 .big-qr-box {
-  width: 160px;
-  height: 160px;
+  width: 170px;
+  height: 170px;
   background: #fff;
   border-radius: 12px;
   padding: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
   display: flex;
   align-items: center;
@@ -715,13 +715,6 @@ body {
   object-fit: contain;
   border-radius: 6px;
   display: block;
-}
-
-.qr-caption {
-  font-size: 0.88rem;
-  line-height: 1.5;
-  color: var(--parchment-dim);
-  max-width: 240px;
 }
 
 .lobby-footer {
