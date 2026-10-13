@@ -689,29 +689,39 @@ body {
 }
 
 .big-qr-box {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   background: #fff;
   border-radius: 12px;
-  padding: 10px;
+  padding: 8px;
   margin-bottom: 14px;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-  position: relative;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  text-decoration: none;
 }
 
-.big-qr-box img, .big-qr-box .qr-sim {
+.big-qr-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 35px rgba(255, 193, 7, 0.7);
+}
+
+.big-qr-box img {
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(0deg, #111, #111 4px, #fff 4px, #fff 8px),
-              repeating-linear-gradient(90deg, #111, #111 4px, #fff 4px, #fff 8px);
-  background-blend-mode: difference;
+  object-fit: contain;
   border-radius: 6px;
+  display: block;
 }
 
 .qr-caption {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
   color: var(--parchment-dim);
-  max-width: 220px;
+  max-width: 240px;
 }
 
 .lobby-footer {

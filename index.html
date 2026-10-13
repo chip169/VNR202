@@ -106,20 +106,19 @@
             <div class="roster-card">
               <div class="roster-header">
                 <span>DANH SÁCH ĐẠI BIỂU SẴN SÀNG</span>
-                <span id="lobby-ready-count">6 người chơi</span>
+                <span id="lobby-ready-count">1 đại biểu</span>
               </div>
               <div class="players-grid" id="lobby-players-grid">
                 <!-- Chèn động người chơi -->
               </div>
             </div>
 
-            <!-- Thẻ hướng dẫn quét QR kết nối nhiều người -->
+            <!-- Thẻ hướng dẫn quét QR kết nối -->
             <div class="lobby-qr-info">
-              <div class="big-qr-box">
-                <div class="qr-sim"></div>
-              </div>
-              <p class="qr-caption">Quét mã QR hoặc nhập mã phòng <strong>#1930-VN</strong> trên điện thoại để tham gia
-                chung sảnh đối kháng thời gian thực!</p>
+              <a href="https://vnr202-blue.vercel.app/" target="_blank" rel="noopener noreferrer" class="big-qr-box" title="Quét mã hoặc nhấn để mở https://vnr202-blue.vercel.app/">
+                <img src="assets/qr_code.png" alt="Mã QR https://vnr202-blue.vercel.app/">
+              </a>
+              <p class="qr-caption">Quét mã QR hoặc truy cập <a href="https://vnr202-blue.vercel.app/" target="_blank" rel="noopener noreferrer" style="color: var(--gold-glow); font-weight: 700; text-decoration: underline;">vnr202-blue.vercel.app</a> trên điện thoại để tham gia tranh tài!</p>
             </div>
           </div>
 
@@ -159,9 +158,7 @@
         </div>
 
         <!-- Dải thanh vị trí đối thủ trực tiếp -->
-        <div class="rival-ticker-bar" id="rival-ticker-bar">
-          <!-- Cập nhật điểm các đối thủ theo thời gian thực -->
-        </div>
+        <div class="rival-ticker-bar" id="rival-ticker-bar" style="display: none;"></div>
 
         <!-- Khung câu hỏi lịch sử chính -->
         <div class="battle-main-layout">
@@ -206,8 +203,8 @@
               <div class="stat-desc">Chuỗi Combo Tối Đa</div>
             </div>
             <div class="stat-box">
-              <div class="stat-val" id="final-rank-val">#1</div>
-              <div class="stat-desc">Vị Trí Sảnh Đấu</div>
+              <div class="stat-val" id="final-rank-val">10/10</div>
+              <div class="stat-desc">Số Câu Hoàn Thành</div>
             </div>
           </div>
 

@@ -274,25 +274,13 @@ class HistoricalQuizApp {
       </div>
     `;
 
-    // Khởi tạo danh sách đối thủ
+    // Chỉ người chơi thực tế, không có bot ảo
     this.playerList = [
       { name: "Bạn (Đại Biểu 1930)", avatar: "⭐", score: 0, isPlayer: true }
     ];
 
-    MULTIPLAYER_RIVALS.slice(0, 5).forEach((rival, idx) => {
-      setTimeout(() => {
-        if (this.currentScreen !== 'lobby-screen') return;
-        const chip = document.createElement('div');
-        chip.className = 'player-chip';
-        chip.innerHTML = `
-          <span class="player-avatar">${rival.avatar}</span>
-          <span class="player-name">${rival.name}</span>
-        `;
-        container.appendChild(chip);
-        this.playerList.push({ ...rival, score: 0, isPlayer: false });
-        soundEngine.playClick();
-      }, (idx + 1) * 350);
-    });
+    const readyCount = document.getElementById('lobby-ready-count');
+    if (readyCount) readyCount.innerText = '1 đại biểu';
   }
 
   // Khởi động vòng thi đấu
@@ -322,18 +310,7 @@ class HistoricalQuizApp {
 
   updateRivalTicker() {
     const ticker = document.getElementById('rival-ticker-bar');
-    if (!ticker) return;
-
-    // Sắp xếp theo điểm
-    const sorted = [...this.playerList].sort((a, b) => b.score - a.score);
-    ticker.innerHTML = sorted.map((p, idx) => `
-      <div class="rival-ticker-item ${idx === 0 ? 'leader' : ''}">
-        <span>${idx + 1}.</span>
-        <span>${p.avatar}</span>
-        <strong>${p.name}:</strong>
-        <span>${p.score}đ</span>
-      </div>
-    `).join('');
+    if (ticker) ticker.style.display = 'none';
   }
 
   loadQuestion(index) {
@@ -398,31 +375,11 @@ class HistoricalQuizApp {
         soundEngine.playTick(false);
       }
 
-      // Giả lập bot đối thủ trả lời rải rác trong lúc đồng hồ chạy
-      this.simulateRivalAnswers(currentQ);
-
       if (this.timer <= 0) {
         clearInterval(this.timerInterval);
         this.handleTimeOut(currentQ);
       }
     }, 1000);
-  }
-
-  simulateRivalAnswers(question) {
-    this.playerList.forEach(p => {
-      if (!p.isPlayer && !p.hasAnsweredCurrent) {
-        // Tỷ lệ bot trả lời trong giây này
-        if (Math.random() > 0.6) {
-          p.hasAnsweredCurrent = true;
-          const isCorrect = Math.random() < (p.accuracy || 0.85);
-          if (isCorrect) {
-            const speedBonus = this.timer * 4;
-            p.score += question.points + speedBonus;
-          }
-          this.updateRivalTicker();
-        }
-      }
-    });
   }
 
   handleAnswerSelect(selectedIndex, buttonEl) {
@@ -510,31 +467,29 @@ class HistoricalQuizApp {
     soundEngine.playFanfare();
     this.switchScreen('summary-screen');
 
-    // Xếp hạng
-    const sorted = [...this.playerList].sort((a, b) => b.score - a.score);
-    const myRank = sorted.findIndex(p => p.isPlayer) + 1;
-
     document.getElementById('final-score-val').innerText = `${this.score}đ`;
     document.getElementById('final-combo-val').innerText = `x${this.maxCombo}`;
-    document.getElementById('final-rank-val').innerText = `#${myRank}/${this.playerList.length}`;
+    document.getElementById('final-rank-val').innerText = `10/10 câu`;
 
     // Danh hiệu lịch sử
     let rankTitle = "Chiến Sĩ Tiên Phong Cách Mạng (1930)";
-    if (this.score > 1200) {
-      rankTitle = "Đại Biểu Kiên Trung Cửu Long (1930)";
-    } else if (this.score > 700) {
+    if (this.score >= 1400) {
+      rankTitle = "Đại Biểu Xuất Sắc Cửu Long (1930) 🌟";
+    } else if (this.score >= 900) {
+      rankTitle = "Đại Biểu Kiên Trung Cách Mạng (1930) ⭐";
+    } else {
       rankTitle = "Hội Viên Thanh Niên Cách Mạng (1925)";
     }
     document.getElementById('summary-rank-badge').innerText = rankTitle;
 
-    // Render bảng tổng sắp vinh danh
+    // Render bảng tổng kết vinh danh
     const podiumEl = document.getElementById('final-podium-list');
-    podiumEl.innerHTML = sorted.map((p, idx) => `
-      <div class="podium-item ${p.isPlayer ? 'highlight' : ''}">
-        <span>${idx === 0 ? '👑' : idx + 1 + '.'} ${p.avatar} ${p.name}</span>
-        <strong>${p.score} điểm</strong>
+    podiumEl.innerHTML = `
+      <div class="podium-item highlight">
+        <span>🏆 ⭐ Bạn (Đại Biểu 1930)</span>
+        <strong>${this.score} điểm</strong>
       </div>
-    `).join('');
+    `;
   }
 }
 
