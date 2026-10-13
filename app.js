@@ -58,6 +58,14 @@ class HistoricalQuizApp {
     this.initParallax();
     this.initLobbySimulation();
     this.bindEvents();
+
+    // Hỗ trợ kiểm thử trực tiếp qua URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('screen') === 'timeline') {
+      this.miniGame.startTimelineGame();
+    } else if (urlParams.get('screen') === 'cipher') {
+      this.miniGame.startCipherGame();
+    }
   }
 
   // Khởi động chuỗi Video Intro Điện Ảnh
@@ -167,6 +175,16 @@ class HistoricalQuizApp {
     const playIntroBtn = document.getElementById('btn-play-intro');
     if (playIntroBtn) {
       playIntroBtn.style.display = (screenId === 'start-screen') ? 'flex' : 'none';
+    }
+
+    // Ẩn thanh HUD góc trên khi chơi mini-game để tránh che khuất trên thiết bị di động
+    const topHud = document.querySelector('.top-hud-bar');
+    if (topHud) {
+      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen') {
+        topHud.style.display = 'none';
+      } else {
+        topHud.style.display = 'flex';
+      }
     }
   }
 
