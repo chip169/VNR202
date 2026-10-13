@@ -54,37 +54,12 @@ body {
   height: 108%;
   background-image: url('assets/concept_art_main.jpg');
   background-size: cover;
-  background-position: center center;
+  background-position: center 36%;
   transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform;
   filter: contrast(1.06) brightness(0.96) saturate(1.08);
 }
 
-/* Che sạch hoàn toàn góc dưới trái (icon điện thoại, QR và chữ Group Play) */
-.scene-layer-bg::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 28%;
-  height: 22%;
-  background: radial-gradient(ellipse at 15% 85%, #110d0c 58%, rgba(17, 13, 12, 0.95) 78%, transparent 100%);
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Che sạch dải chữ trên cùng */
-.scene-layer-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15%;
-  width: 70%;
-  height: 12%;
-  background: radial-gradient(ellipse at 50% 10%, #150f0e 55%, rgba(21, 15, 14, 0.9) 78%, transparent 100%);
-  pointer-events: none;
-  z-index: 2;
-}
 
 /* Canvas Particle Overlay */
 #fx-canvas {
@@ -443,10 +418,10 @@ body {
 
 /* Đã loại bỏ hoàn toàn Hotspot QR và Group Play */
 
-/* Nút VÀO CHƠI TRỰC TUYẾN khớp với vị trí trong tranh vẽ */
-.hotspot-main-cta {
+/* Bảng điều khiển trung tâm dưới chân trang Start Screen */
+.start-controls-panel {
   position: absolute;
-  bottom: 3.5%;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -455,32 +430,36 @@ body {
   gap: 8px;
   pointer-events: auto;
   z-index: 25;
+  width: 94%;
+  max-width: 640px;
 }
 
 .btn-art-play-trigger {
   position: relative;
-  width: 320px;
-  height: 60px;
-  background: rgba(183, 28, 28, 0.15);
-  border: 2px solid transparent;
-  border-radius: 30px;
+  width: 330px;
+  height: 46px;
+  background: linear-gradient(135deg, rgba(183, 28, 28, 0.45) 0%, rgba(30, 20, 18, 0.8) 100%);
+  border: 1px solid var(--gold-primary);
+  border-radius: 26px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 87, 34, 0.4);
 }
 
 .btn-trigger-text {
   font-family: var(--font-heading);
-  font-size: 1.18rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   color: #fff;
+  white-space: nowrap;
   text-shadow: 0 2px 4px rgba(0,0,0,0.95), 0 0 12px rgba(255, 215, 0, 0.8);
-  opacity: 0.95;
+  opacity: 0.98;
   transition: all 0.3s ease;
 }
 
@@ -490,19 +469,20 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: 30px;
-  border: 2px solid rgba(255, 215, 0, 0.5);
-  box-shadow: 0 0 20px rgba(255, 87, 34, 0.5), inset 0 0 15px rgba(255, 193, 7, 0.3);
+  border-radius: 26px;
+  border: 1.5px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 18px rgba(255, 87, 34, 0.5), inset 0 0 12px rgba(255, 193, 7, 0.3);
   animation: pulseButtonGlow 2.5s infinite alternate ease-in-out;
+  pointer-events: none;
 }
 
 @keyframes pulseButtonGlow {
   0% {
-    box-shadow: 0 0 15px rgba(255, 87, 34, 0.4), inset 0 0 10px rgba(255, 193, 7, 0.2);
+    box-shadow: 0 0 12px rgba(255, 87, 34, 0.35), inset 0 0 8px rgba(255, 193, 7, 0.2);
     border-color: rgba(255, 215, 0, 0.4);
   }
   100% {
-    box-shadow: 0 0 35px rgba(255, 87, 34, 0.9), inset 0 0 22px rgba(255, 193, 7, 0.5);
+    box-shadow: 0 0 30px rgba(255, 87, 34, 0.85), inset 0 0 18px rgba(255, 193, 7, 0.5);
     border-color: rgba(255, 235, 150, 0.9);
   }
 }
@@ -514,8 +494,9 @@ body {
 }
 
 .btn-art-play-trigger:hover {
-  transform: scale(1.05);
-  background: rgba(220, 40, 20, 0.3);
+  transform: scale(1.04);
+  background: linear-gradient(135deg, rgba(215, 35, 35, 0.7) 0%, rgba(50, 30, 25, 0.9) 100%);
+  box-shadow: 0 6px 28px rgba(255, 87, 34, 0.8), 0 0 20px rgba(255, 215, 0, 0.6);
 }
 
 .btn-art-play-trigger:hover .btn-trigger-text {
@@ -527,24 +508,60 @@ body {
   transform: scale(0.97);
 }
 
-.btn-sub-campaign-tag {
-  background: rgba(24, 16, 14, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  color: var(--gold-primary);
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 4px 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+/* 2 Nút Chế độ phụ xếp ngang gọn gàng, thoáng đãng */
+.start-sub-modes-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
 }
 
-.btn-sub-campaign-tag:hover {
-  background: rgba(183, 28, 28, 0.7);
+.btn-sub-pill {
+  flex: 1;
+  max-width: 300px;
+  padding: 6px 16px;
+  border-radius: 18px;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(8px);
+  outline: none;
+}
+
+.btn-pill-minigame {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(180, 83, 9, 0.35) 100%);
+  border: 1px solid var(--gold-primary);
+  color: #fffae6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 12px rgba(245, 158, 11, 0.25);
+}
+
+.btn-pill-minigame:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(180, 83, 9, 0.6) 100%);
   color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.5);
+}
+
+.btn-pill-quiz {
+  background: linear-gradient(135deg, rgba(30, 24, 22, 0.8) 0%, rgba(20, 15, 14, 0.9) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--parchment);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.btn-pill-quiz:hover {
+  background: linear-gradient(135deg, rgba(45, 34, 30, 0.9) 0%, rgba(30, 20, 18, 0.95) 100%);
   border-color: var(--gold-glow);
-  box-shadow: 0 0 12px rgba(255, 193, 7, 0.4);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(255, 215, 0, 0.3);
 }
 
 .hotspot-info {
@@ -1744,12 +1761,81 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Custom Scrollbars */
+.minigame-container::-webkit-scrollbar,
+.timeline-track-wrapper::-webkit-scrollbar,
+.decoded-feed-list::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.minigame-container::-webkit-scrollbar-track,
+.timeline-track-wrapper::-webkit-scrollbar-track,
+.decoded-feed-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+}
+
+.minigame-container::-webkit-scrollbar-thumb,
+.timeline-track-wrapper::-webkit-scrollbar-thumb,
+.decoded-feed-list::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.5);
+  border-radius: 4px;
+}
+
+.minigame-container::-webkit-scrollbar-thumb:hover,
+.timeline-track-wrapper::-webkit-scrollbar-thumb:hover,
+.decoded-feed-list::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-glow);
+}
+
 @media (max-width: 900px) {
+  .minigame-container {
+    width: 96%;
+    max-height: 96vh;
+    margin: 2vh auto;
+    padding: 14px 16px;
+  }
+  .minigame-header-hud {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .minigame-stats-row {
+    width: 100%;
+    justify-content: space-between;
+  }
   .cipher-columns-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
-  .minigame-container {
-    height: 95vh;
-    padding: 14px;
+  .start-controls-panel {
+    bottom: 16px;
+    width: 95%;
+  }
+  .btn-art-play-trigger {
+    width: 100%;
+    max-width: 320px;
+    height: 48px;
+  }
+  .start-sub-modes-row {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-sub-pill {
+    max-width: 320px;
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+  }
+  .lobby-footer {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  .lobby-footer button {
+    width: 100%;
   }
 }

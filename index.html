@@ -72,24 +72,24 @@
     <!-- ================= 1. MÀN HÌNH KHỞI ĐỘNG (START SCREEN) ================= -->
     <main id="start-screen" class="screen active">
       <div class="start-screen-overlay-zone">
-        <!-- Vùng tương tác trung tâm dưới: Nút VÀO CHƠI TRỰC TUYẾN -->
-        <div class="hotspot-main-cta">
+        <!-- Khung điều khiển trung tâm dưới chân trang -->
+        <div class="start-controls-panel">
           <button class="btn-art-play-trigger" id="btn-main-play" title="Nhấn để Vào chơi trực tuyến">
             <div class="btn-fire-glow-border"></div>
             <span class="btn-spark-particle spark-1">✦</span>
-            <span class="btn-trigger-text">VÀO CHƠI TRỰC TUYẾN</span>
+            <span class="btn-trigger-text">⚡ VÀO CHƠI TRỰC TUYẾN</span>
             <span class="btn-spark-particle spark-2">✦</span>
           </button>
 
-          <!-- Chế độ Chơi Mini-Game Mật Thư & Trục Thời Gian -->
-          <button class="btn-sub-campaign-tag btn-minigame-tag" id="btn-mode-minigame">
-            🧩 Mini-Game: Mật Thư & Trục Thời Gian
-          </button>
-
-          <!-- Chế độ Chơi Trắc Nghiệm 100 Câu -->
-          <button class="btn-sub-campaign-tag" id="btn-mode-campaign">
-            📖 Trắc Nghiệm 100 Câu Lịch Sử Đảng
-          </button>
+          <!-- 2 Nút Chế độ phụ bố trí ngang gọn gàng, thoáng đãng -->
+          <div class="start-sub-modes-row">
+            <button class="btn-sub-pill btn-pill-minigame" id="btn-mode-minigame" title="Chơi Mini-game Mật Thư & Dòng Thời Gian">
+              🧩 Mini-Game: Mật Thư & Dòng Thời Gian
+            </button>
+            <button class="btn-sub-pill btn-pill-quiz" id="btn-mode-campaign" title="Làm bài Trắc nghiệm 100 Câu">
+              📖 Đấu Trắc Nghiệm 100 Câu
+            </button>
+          </div>
         </div>
       </div>
     </main>

@@ -162,6 +162,12 @@ class HistoricalQuizApp {
       target.classList.add('active');
       this.currentScreen = screenId;
     }
+
+    // Nút Xem Intro chỉ hiển thị khi ở Start Screen
+    const playIntroBtn = document.getElementById('btn-play-intro');
+    if (playIntroBtn) {
+      playIntroBtn.style.display = (screenId === 'start-screen') ? 'flex' : 'none';
+    }
   }
 
   bindEvents() {
