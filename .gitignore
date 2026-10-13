@@ -1,0 +1,12 @@
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencies
+node_modules/
+.npm/
+
+# Local env
+.env*.local

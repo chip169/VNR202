@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BÌNH MINH THỐNG NHẤT: Ánh Sáng Cửu Long (1930) - Web Game Lịch Sử</title>
+  <meta name="description"
+    content="Trò chơi lịch sử đố vui đối kháng trực tuyến: Hành trình chuẩn bị và thành lập Đảng Cộng sản Việt Nam (1930) với đồ họa 2.5D sống động.">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="viewport-root">
+    <!-- Phông nền mỹ thuật lịch sử 2.5D có phản hồi nghiêng theo chuột -->
+    <div class="scene-layer-bg" id="scene-bg"></div>
+
+    <!-- Canvas hạt tàn lửa, bụi lịch sử & ánh sáng đèn dầu Cửu Long -->
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Lớp phủ Vintage Film Grain & Vignette màu thời gian -->
+    <div class="vintage-overlay"></div>
+
+    <!-- Thanh HUD trên cùng -->
+    <header class="top-hud-bar">
+      <div class="hud-actions">
+        <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem
+          Intro</button>
+        <button id="btn-toggle-sound" class="btn-icon" title="Bật/Tắt Âm thanh">🔔</button>
+        <button id="btn-fullscreen" class="btn-icon" title="Toàn màn hình">⛶</button>
+      </div>
+    </header>
+
+    <!-- ================= 0. VIDEO INTRO ĐIỆN ẢNH (CINEMATIC INTRO) ================= -->
+    <section id="intro-screen" class="screen">
+      <div class="cinematic-container">
+        <!-- Dải đen điện ảnh Cinematic Letterbox -->
+        <div class="cinema-letterbox-bar cinema-top"></div>
+        <div class="cinema-letterbox-bar cinema-bottom"></div>
+
+        <!-- Khung chiếu phim với chuyển cảnh Pan/Zoom Ken Burns -->
+        <div class="cinema-projector-frame">
+          <div class="cinema-scene-visual" id="cinema-visual"></div>
+          <div class="cinema-scratch-overlay"></div>
+          <div class="cinema-light-leak"></div>
+        </div>
+
+        <!-- Nút Bỏ qua Intro -->
+        <button id="btn-skip-intro" class="btn-cinema-skip">
+          <span>BỎ QUA INTRO</span> <span>⏩</span>
+        </button>
+
+        <!-- Thanh mốc thời gian lịch sử -->
+        <div class="cinema-timeline-bar">
+          <div class="timeline-step" id="step-1911"><span>1911</span> Bến Cảng</div>
+          <div class="timeline-connector"></div>
+          <div class="timeline-step" id="step-1920"><span>1920</span> Luận Cương</div>
+          <div class="timeline-connector"></div>
+          <div class="timeline-step" id="step-1928"><span>1928</span> Vô Sản Hóa</div>
+          <div class="timeline-connector"></div>
+          <div class="timeline-step" id="step-1930"><span>1930</span> Khởi Sắc</div>
+        </div>
+
+        <!-- Hộp phụ đề thuyết minh điện ảnh -->
+        <div class="cinema-narrator-panel">
+          <div class="narrator-era-badge" id="narrator-era">BẾN CẢNG NHÀ RỒNG - 1911</div>
+          <p class="narrator-script-text" id="narrator-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 1. MÀN HÌNH KHỞI ĐỘNG (START SCREEN) ================= -->
+    <main id="start-screen" class="screen active">
+      <div class="start-screen-overlay-zone">
+        <!-- Vùng tương tác trung tâm dưới: Nút VÀO CHƠI TRỰC TUYẾN -->
+        <div class="hotspot-main-cta">
+          <button class="btn-art-play-trigger" id="btn-main-play" title="Nhấn để Vào chơi trực tuyến">
+            <div class="btn-fire-glow-border"></div>
+            <span class="btn-spark-particle spark-1">✦</span>
+            <span class="btn-trigger-text">VÀO CHƠI TRỰC TUYẾN</span>
+            <span class="btn-spark-particle spark-2">✦</span>
+          </button>
+
+          <!-- Chế độ Chơi Chiến Dịch Lịch Sử -->
+          <button class="btn-sub-campaign-tag" id="btn-mode-campaign">
+            📖 Chiến Dịch Lịch Sử (Single Player)
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= 2. SẢNH CHỜ TRỰC TUYẾN (MULTIPLAYER LOBBY) ================= -->
+    <section id="lobby-screen" class="screen">
+      <div class="lobby-modal-wrapper">
+        <div class="lobby-panel">
+          <div class="lobby-header">
+            <h2 class="lobby-title-h2">🏛️ SẢNH CHỜ ĐỐI KHÁNG TRỰC TUYẾN</h2>
+            <div class="room-pin-badge">
+              <span>MÃ PHÒNG:</span>
+              <strong>#1930-VN</strong>
+            </div>
+          </div>
+
+          <div class="lobby-body">
+            <!-- Danh sách người tham gia trực tiếp -->
+            <div class="roster-card">
+              <div class="roster-header">
+                <span>DANH SÁCH ĐẠI BIỂU SẴN SÀNG</span>
+                <span id="lobby-ready-count">6 người chơi</span>
+              </div>
+              <div class="players-grid" id="lobby-players-grid">
+                <!-- Chèn động người chơi -->
+              </div>
+            </div>
+
+            <!-- Thẻ hướng dẫn quét QR kết nối nhiều người -->
+            <div class="lobby-qr-info">
+              <div class="big-qr-box">
+                <div class="qr-sim"></div>
+              </div>
+              <p class="qr-caption">Quét mã QR hoặc nhập mã phòng <strong>#1930-VN</strong> trên điện thoại để tham gia
+                chung sảnh đối kháng thời gian thực!</p>
+            </div>
+          </div>
+
+          <div class="lobby-footer">
+            <button class="btn-secondary" id="btn-lobby-back">⬅ Quay Lại</button>
+            <button class="btn-primary-start" id="btn-start-lobby-game">⚡ BẮT ĐẦU TRANH TÀI</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3. ĐẤU TRƯỜNG ĐỐ VUI (BATTLE ARENA) ================= -->
+    <section id="battle-screen" class="screen">
+      <div class="battle-arena-wrapper">
+        <!-- Header HUD trận đấu -->
+        <div class="battle-header-hud">
+          <div class="player-status-badge">
+            <span class="status-avatar">⭐</span>
+            <div class="status-meta">
+              <span class="status-name">Đại Biểu 1930</span>
+              <span class="status-score"><span id="player-score">0</span> Điểm</span>
+            </div>
+          </div>
+
+          <!-- Đồng hồ bấm giờ tròn 15s -->
+          <div class="timer-container">
+            <svg class="timer-circle-svg" viewBox="0 0 72 72">
+              <circle class="timer-bg-ring" cx="36" cy="36" r="31"></circle>
+              <circle class="timer-progress-ring" id="timer-ring" cx="36" cy="36" r="31"></circle>
+            </svg>
+            <span class="timer-label-num" id="timer-val">15</span>
+          </div>
+
+          <div class="combo-badge" id="combo-badge" style="display: none;">
+            🔥 Combo x1
+          </div>
+        </div>
+
+        <!-- Dải thanh vị trí đối thủ trực tiếp -->
+        <div class="rival-ticker-bar" id="rival-ticker-bar">
+          <!-- Cập nhật điểm các đối thủ theo thời gian thực -->
+        </div>
+
+        <!-- Khung câu hỏi lịch sử chính -->
+        <div class="battle-main-layout">
+          <div class="question-stage-card">
+            <div class="question-era-tag" id="question-era-tag">🏛️ Giai đoạn Lịch sử</div>
+            <h2 class="question-text" id="question-text">Đang tải câu hỏi...</h2>
+            <p class="question-historical-context" id="question-context"></p>
+          </div>
+
+          <!-- 4 Lựa chọn trả lời -->
+          <div class="answers-grid" id="answers-grid">
+            <!-- Sinh tự động từ questions.js -->
+          </div>
+        </div>
+
+        <!-- Tư liệu lịch sử chú giải sau khi trả lời -->
+        <div class="insight-popover" id="insight-popover">
+          <div class="insight-title">📜 TƯ LIỆU LỊCH SỬ CHÍNH XÁC:</div>
+          <div class="insight-body" id="insight-text"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 4. MÀN HÌNH TỔNG KẾT & VINH DANH (SUMMARY & PODIUM) ================= -->
+    <section id="summary-screen" class="screen">
+      <div class="summary-screen-wrapper">
+        <div class="summary-card">
+          <!-- Huy hiệu vàng lịch sử vinh danh cách mạng -->
+          <img src="assets/medal_badge.jpg" alt="Huy hiệu Vinh danh Cách mạng" class="summary-medal-img">
+
+          <h2 class="summary-headline">HOÀN THÀNH HÀNH TRÌNH</h2>
+          <div class="summary-rank-badge" id="summary-rank-badge">Chiến Sĩ Tiên Phong Cách Mạng (1930)</div>
+
+          <!-- Thống kê điểm số -->
+          <div class="stats-summary-grid">
+            <div class="stat-box">
+              <div class="stat-val" id="final-score-val">0đ</div>
+              <div class="stat-desc">Tổng Điểm</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="final-combo-val">x0</div>
+              <div class="stat-desc">Chuỗi Combo Tối Đa</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="final-rank-val">#1</div>
+              <div class="stat-desc">Vị Trí Sảnh Đấu</div>
+            </div>
+          </div>
+
+          <!-- Bảng xếp hạng bục vinh quang -->
+          <div class="final-podium-list" id="final-podium-list"></div>
+
+          <!-- Hành động -->
+          <div class="summary-actions-row">
+            <button class="btn-primary-start" id="btn-replay-game">🔄 VÀO VÒNG ĐẤU MỚI</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scripts -->
+  <script src="questions.js"></script>
+  <script src="sound.js"></script>
+  <script src="particles.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
