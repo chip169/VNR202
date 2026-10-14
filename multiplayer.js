@@ -337,13 +337,37 @@ class MultiplayerManager {
             this.evaluateHost();
             this.updateLobbyUI();
           }
+
+          // Xử lý các trường hợp vào sau ("vào sau phải chịu"):
+          if (!this.isHost && data.isGameStarted) {
+            this.isGameStarted = true;
+            this.gameEndAt = data.gameEndAt || 0;
+            this.gameDuration = data.gameDuration || 300;
+
+            if (data.currentStage === 'cipher') {
+              // Phòng thi đã sang Chặng 2 -> Cắt Chặng 1, đưa thẳng vào Chặng 2!
+              if (this.app && this.app.currentScreen !== 'cipher-game-screen' && this.app.currentScreen !== 'summary-screen') {
+                console.log('⚡ Phòng đã chuyển Chặng 2 -> Ép người vào sau vào thẳng Chặng 2');
+                if (this.app.miniGame) {
+                  this.app.miniGame.startCipherGame();
+                }
+              }
+            } else if (data.currentStage === 'timeline') {
+              // Phòng đang ở Chặng 1 -> Tự động đưa vào Chặng 1 thi đấu theo thời gian còn lại
+              if (this.app && this.app.currentScreen === 'player-wait-screen') {
+                if (this.app.miniGame) {
+                  this.app.miniGame.startTimelineGame();
+                }
+              }
+            }
+          }
           break;
         }
 
         // Lệnh bắt đầu trò chơi từ Chủ tọa
         case 'START_GAME': {
-          // Bỏ qua nếu là chính máy mình vừa phát đi lệnh (vì Host đã tự kích hoạt bắt đầu)
-          if (data.senderId === this.playerId) break;
+          // Bỏ qua nếu là Chủ tọa (máy chiếu) hoặc chính máy mình vừa phát đi lệnh
+          if (this.isHost || data.senderId === this.playerId) break;
 
           // Kiểm tra xác thực lệnh bắt đầu phải từ Chủ tọa
           const currentHost = this.players.find(p => p.isHost);
@@ -361,8 +385,10 @@ class MultiplayerManager {
             p.timeSeconds = 0;
             p.formattedTime = null;
           });
-          // Lưu thông tin đồng hồ
-          this.gameDuration = data.durationSeconds || 0;
+          // Lưu thông tin đồng hồ và trạng thái game
+          this.isGameStarted = true;
+          this.currentStage = data.stage || 'timeline';
+          this.gameDuration = data.durationSeconds || 300;
           this.gameEndAt = data.endAt || 0;
           if (this.app && this.app.miniGame) {
             this.app.miniGame.startTimelineGame();
@@ -376,10 +402,17 @@ class MultiplayerManager {
 
         // Nhận lệnh chuyển chặng từ Chủ tọa (Chặng 1 -> Chặng 2)
         case 'SWITCH_STAGE': {
+          // Chủ tọa (máy chiếu) KHÔNG ĐƯỢC CHƠI, luôn giữ nguyên màn chiếu Spectator
+          if (this.isHost || data.senderId === this.playerId) break;
+
           console.log('⏩ Nhận lệnh SWITCH_STAGE từ Chủ tọa:', data);
           soundEngine.playFanfare();
+          this.currentStage = data.targetStage || 'cipher';
+          this.gameDuration = data.durationSeconds || 300;
+          this.gameEndAt = data.endAt || (Date.now() + 300000);
+
           if (this.app && this.app.miniGame) {
-            // Chuyển sang Chặng 2 ngay lập tức
+            // Chuyển sang Chặng 2 ngay lập tức cho đại biểu
             this.app.miniGame.transitionToCipherStage();
           }
           break;
@@ -387,7 +420,8 @@ class MultiplayerManager {
 
         // Nhận lệnh kết thúc game từ chủ tọa
         case 'GAME_OVER': {
-          if (data.senderId === this.playerId) break;
+          // Chủ tọa (máy chiếu) KHÔNG xử lý ở đây vì đã hiển thị podium trên màn chiếu
+          if (this.isHost || data.senderId === this.playerId) break;
           console.log('🏁 Nhận GAME_OVER từ chủ tọa');
           if (this.app && typeof this.app.onGameOverReceived === 'function') {
             this.app.onGameOverReceived(data.leaderboard || []);
@@ -457,7 +491,11 @@ class MultiplayerManager {
   broadcastRoster() {
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'ROSTER_SYNC',
-      players: this.players
+      players: this.players,
+      isGameStarted: this.isGameStarted || false,
+      currentStage: this.currentStage || 'timeline',
+      gameDuration: this.gameDuration || 300,
+      gameEndAt: this.gameEndAt || 0
     });
   }
 
@@ -474,8 +512,10 @@ class MultiplayerManager {
       p.timeSeconds = 0;
       p.formattedTime = null;
     });
-    const dur = (durationSeconds !== undefined ? durationSeconds : 600);
+    const dur = (durationSeconds !== undefined ? durationSeconds : 300);
     const endAt = dur > 0 ? (Date.now() + dur * 1000) : 0;
+    this.isGameStarted = true;
+    this.currentStage = 'timeline';
     this.gameDuration = dur;
     this.gameEndAt = endAt;
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
@@ -483,18 +523,25 @@ class MultiplayerManager {
       senderId: this.playerId,
       mode: mode || 'minigame',
       durationSeconds: dur,
-      endAt: endAt
+      endAt: endAt,
+      stage: 'timeline'
     });
   }
 
   // Phát lệnh chuyển sang Chặng 2 (Host only hoặc khi hết 5 phút Chặng 1)
   broadcastSwitchStage(targetStage = 'cipher') {
     if (!this.isHost) return;
+    this.currentStage = targetStage;
+    this.gameDuration = 300;
+    this.gameEndAt = Date.now() + 300000;
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'SWITCH_STAGE',
       senderId: this.playerId,
-      targetStage: targetStage
+      targetStage: targetStage,
+      durationSeconds: 300,
+      endAt: this.gameEndAt
     });
+    this.broadcastRoster();
   }
 
   // Phát lệnh kết thúc game sớm (Host only)
