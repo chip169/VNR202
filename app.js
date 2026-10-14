@@ -245,16 +245,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 2. Nút "Nhập Mã Phòng Tham Gia" từ Start Screen
-    const openJoinBtn = document.getElementById('btn-open-join-modal');
-    if (openJoinBtn) {
-      openJoinBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        this.openJoinScreen(null);
-      });
-    }
-
-    // 3. Chọn Avatar Đại Biểu
+    // 2. Chọn Avatar Đại Biểu
     const avatarOpts = document.querySelectorAll('.avatar-opt');
     avatarOpts.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -265,7 +256,7 @@ class HistoricalQuizApp {
       });
     });
 
-    // 4. Nút Hủy / Quay lại từ màn hình Đăng Ký Đại Biểu
+    // 3. Nút Hủy / Quay lại từ màn hình Đăng Ký Đại Biểu
     const cancelJoinBtn = document.getElementById('btn-cancel-join');
     if (cancelJoinBtn) {
       cancelJoinBtn.addEventListener('click', () => {
@@ -274,7 +265,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 5. Submit Form Đăng Ký Đại Biểu (Tham gia phòng)
+    // 4. Submit Form Đăng Ký Đại Biểu (Tham gia phòng)
     const joinForm = document.getElementById('join-room-form');
     if (joinForm) {
       joinForm.addEventListener('submit', (e) => {
@@ -306,29 +297,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 6. Nút Mini-game Mật Thư & Dòng Thời Gian từ Start Screen (Chơi đơn)
-    const miniGameBtn = document.getElementById('btn-mode-minigame');
-    if (miniGameBtn) {
-      miniGameBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        soundEngine.startAmbient();
-        this.mode = 'single';
-        this.miniGame.startTimelineGame();
-      });
-    }
-
-    // 7. Nút Chế độ Chiến Dịch (100 câu trắc nghiệm - Chơi đơn)
-    const campaignBtn = document.getElementById('btn-mode-campaign');
-    if (campaignBtn) {
-      campaignBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        soundEngine.startAmbient();
-        this.mode = 'campaign';
-        this.startQuizBattle();
-      });
-    }
-
-    // 8. Nút Bắt đầu Mini-Game từ Sảnh Chờ (Chủ tọa phát lệnh)
+    // 5. Nút Bắt đầu Mini-Game từ Sảnh Chờ (Chủ tọa phát lệnh)
     const startBattleBtn = document.getElementById('btn-start-lobby-game');
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
@@ -340,19 +309,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 9. Nút Bắt đầu Đấu Trắc Nghiệm từ Sảnh Chờ (Chủ tọa phát lệnh)
-    const lobbyQuizBtn = document.getElementById('btn-lobby-start-quiz');
-    if (lobbyQuizBtn) {
-      lobbyQuizBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        if (this.multiplayer.isHost) {
-          this.multiplayer.broadcastStartGame('quiz');
-        }
-        this.startQuizBattle();
-      });
-    }
-
-    // 10. Nút Thoát Mini-Game quay về Màn hình chính
+    // 6. Nút Thoát Mini-Game quay về Màn hình chính
     const tlBack = document.getElementById('btn-timeline-back');
     if (tlBack) {
       tlBack.addEventListener('click', () => {
@@ -368,7 +325,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 11. Nút Rời phòng từ Sảnh chờ
+    // 7. Nút Rời phòng từ Sảnh chờ
     const backBtn = document.getElementById('btn-lobby-back');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
@@ -378,7 +335,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 12. Nút Chơi lại từ Màn hình Vinh danh
+    // 8. Nút Chơi lại từ Màn hình Vinh danh
     const replayBtn = document.getElementById('btn-replay-game');
     if (replayBtn) {
       replayBtn.addEventListener('click', () => {
@@ -386,24 +343,9 @@ class HistoricalQuizApp {
         this.switchScreen('start-screen');
       });
     }
-
-    // Hỗ trợ phím tắt bàn phím A, B, C, D hoặc 1, 2, 3, 4
-    window.addEventListener('keydown', (e) => {
-      if (this.currentScreen === 'battle-screen' && !this.isAnswerLocked) {
-        const key = e.key.toUpperCase();
-        const map = { '1': 0, 'A': 0, '2': 1, 'B': 1, '3': 2, 'C': 2, '4': 3, 'D': 3 };
-        if (key in map) {
-          const btns = document.querySelectorAll('.btn-answer-choice');
-          const idx = map[key];
-          if (btns[idx]) {
-            btns[idx].click();
-          }
-        }
-      }
-    });
   }
 
-  // Mở màn hình Đăng Ký Đại Biểu (khi quét mã QR hoặc bấm Nhập mã phòng)
+  // Mở màn hình Đăng Ký Đại Biểu (khi quét mã QR hoặc mở link tham gia)
   openJoinScreen(prefillCode) {
     this.switchScreen('join-screen');
     const pinGroup = document.getElementById('group-room-pin');
@@ -416,192 +358,14 @@ class HistoricalQuizApp {
       if (pinGroup) pinGroup.style.display = 'none';
       if (pinDisplay) pinDisplay.innerText = `#${this.selectedRoomCode}`;
     } else {
-      this.selectedRoomCode = '';
-      if (pinGroup) pinGroup.style.display = 'block';
-      if (pinDisplay) pinDisplay.innerText = 'NHẬP MÃ BÊN DƯỚI';
+      this.selectedRoomCode = '1930-VN';
+      if (pinGroup) pinGroup.style.display = 'none';
+      if (pinDisplay) pinDisplay.innerText = `#${this.selectedRoomCode}`;
     }
 
     if (nameInput) {
       nameInput.value = '';
       setTimeout(() => nameInput.focus(), 300);
-    }
-  }
-
-  // Khởi động vòng thi đấu
-  startQuizBattle() {
-    this.score = 0;
-    this.combo = 0;
-    this.maxCombo = 0;
-    this.currentQuestionIdx = 0;
-    // Xáo trộn ngẫu nhiên 10 câu hỏi từ ngân hàng 100 câu
-    const shuffled = [...HISTORICAL_QUESTIONS].sort(() => 0.5 - Math.random());
-    this.roundQuestions = shuffled.slice(0, 10);
-    this.updateHUD();
-    this.switchScreen('battle-screen');
-    this.loadQuestion(this.currentQuestionIdx);
-  }
-
-  updateHUD() {
-    this.scoreDisplay.innerText = this.score;
-    if (this.combo >= 2) {
-      this.comboBadge.style.display = 'inline-block';
-      this.comboBadge.innerText = `🔥 Combo x${this.combo}`;
-    } else {
-      this.comboBadge.style.display = 'none';
-    }
-    this.updateRivalTicker();
-  }
-
-  updateRivalTicker() {
-    const ticker = document.getElementById('rival-ticker-bar');
-    if (ticker) ticker.style.display = 'none';
-  }
-
-  loadQuestion(index) {
-    if (!this.roundQuestions || index >= this.roundQuestions.length) {
-      this.showSummary();
-      return;
-    }
-
-    const q = this.roundQuestions[index];
-    this.isAnswerLocked = false;
-    this.timer = 15;
-
-    // Reset UI Popover tư liệu
-    const popover = document.getElementById('insight-popover');
-    if (popover) popover.classList.remove('visible');
-
-    // Cập nhật nội dung câu hỏi
-    document.getElementById('question-era-tag').innerHTML = `🏛️ Câu ${index + 1}/${this.roundQuestions.length} — ${q.era}`;
-    document.getElementById('question-text').innerText = q.question;
-    document.getElementById('question-context').innerText = `"${q.context}"`;
-
-    // Render 4 đáp án
-    const container = document.getElementById('answers-grid');
-    container.innerHTML = '';
-    const keys = ['A', 'B', 'C', 'D'];
-
-    q.options.forEach((opt, optIdx) => {
-      const btn = document.createElement('button');
-      btn.className = 'btn-answer-choice';
-      btn.innerHTML = `
-        <span class="choice-key">${keys[optIdx]}</span>
-        <span class="choice-text">${opt}</span>
-      `;
-      btn.addEventListener('click', () => this.handleAnswerSelect(optIdx, btn));
-      container.appendChild(btn);
-    });
-
-    this.startTimer(q);
-  }
-
-  startTimer(currentQ) {
-    clearInterval(this.timerInterval);
-    const totalTime = 15;
-    const maxOffset = 200; // SVG dasharray
-
-    this.timerText.innerText = this.timer;
-    this.timerRing.style.strokeDashoffset = '0';
-    this.timerRing.style.stroke = 'var(--gold-primary)';
-
-    this.timerInterval = setInterval(() => {
-      this.timer--;
-      this.timerText.innerText = this.timer;
-
-      // Stroke progress
-      const progress = (totalTime - this.timer) / totalTime;
-      this.timerRing.style.strokeDashoffset = progress * maxOffset;
-
-      if (this.timer <= 4) {
-        this.timerRing.style.stroke = '#ff1744';
-        soundEngine.playTick(true);
-      } else {
-        soundEngine.playTick(false);
-      }
-
-      if (this.timer <= 0) {
-        clearInterval(this.timerInterval);
-        this.handleTimeOut(currentQ);
-      }
-    }, 1000);
-  }
-
-  handleAnswerSelect(selectedIndex, buttonEl) {
-    if (this.isAnswerLocked) return;
-    this.isAnswerLocked = true;
-    clearInterval(this.timerInterval);
-
-    const q = this.roundQuestions ? this.roundQuestions[this.currentQuestionIdx] : HISTORICAL_QUESTIONS[this.currentQuestionIdx];
-    const isCorrect = selectedIndex === q.correctIndex;
-    const buttons = document.querySelectorAll('.btn-answer-choice');
-
-    // Đánh dấu đúng/sai
-    if (isCorrect) {
-      buttonEl.classList.add('correct');
-      soundEngine.playCorrect();
-      this.combo++;
-      if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-
-      // Tính điểm: Điểm cơ bản + Điểm tốc độ + Thưởng chuỗi Combo
-      const speedBonus = this.timer * 8;
-      const comboMultiplier = 1 + (this.combo - 1) * 0.25;
-      const earned = Math.round((q.points + speedBonus) * comboMultiplier);
-      this.score += earned;
-
-      if (this.combo >= 2) soundEngine.playCombo(this.combo);
-    } else {
-      buttonEl.classList.add('wrong');
-      soundEngine.playWrong();
-      this.combo = 0;
-      // Làm sáng đáp án đúng
-      buttons[q.correctIndex].classList.add('correct');
-    }
-
-    if (this.multiplayer) {
-      this.multiplayer.sendScoreUpdate(this.score);
-    }
-
-    this.updateHUD();
-
-    // Hiển thị tư liệu lịch sử giải thích
-    this.showInsight(q.insight);
-
-    // Chuyển câu tiếp theo sau 3.5 giây để người chơi đọc hiểu lịch sử
-    setTimeout(() => {
-      this.playerList.forEach(p => p.hasAnsweredCurrent = false);
-      this.currentQuestionIdx++;
-      this.loadQuestion(this.currentQuestionIdx);
-    }, 3800);
-  }
-
-  handleTimeOut(question) {
-    if (this.isAnswerLocked) return;
-    this.isAnswerLocked = true;
-    soundEngine.playWrong();
-    this.combo = 0;
-
-    const q = this.roundQuestions ? this.roundQuestions[this.currentQuestionIdx] : question;
-    const buttons = document.querySelectorAll('.btn-answer-choice');
-    if (buttons[q.correctIndex]) {
-      buttons[q.correctIndex].classList.add('correct');
-    }
-
-    this.updateHUD();
-    this.showInsight("Hết thời gian! " + q.insight);
-
-    setTimeout(() => {
-      this.playerList.forEach(p => p.hasAnsweredCurrent = false);
-      this.currentQuestionIdx++;
-      this.loadQuestion(this.currentQuestionIdx);
-    }, 3500);
-  }
-
-  showInsight(text) {
-    const popover = document.getElementById('insight-popover');
-    const body = document.getElementById('insight-text');
-    if (popover && body) {
-      body.innerText = text;
-      popover.classList.add('visible');
     }
   }
 
@@ -613,7 +377,7 @@ class HistoricalQuizApp {
 
     document.getElementById('final-score-val').innerText = `${this.score}đ`;
     document.getElementById('final-combo-val').innerText = `x${this.maxCombo}`;
-    document.getElementById('final-rank-val').innerText = `10/10 câu`;
+    document.getElementById('final-rank-val').innerText = `Hoàn thành 2 Màn Chơi!`;
 
     // Danh hiệu lịch sử
     let rankTitle = "Chiến Sĩ Tiên Phong Cách Mạng (1930)";

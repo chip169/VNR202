@@ -167,14 +167,10 @@ class MultiplayerManager {
 
         // Lệnh bắt đầu trò chơi từ Máy Chủ
         case 'START_GAME':
-          console.log('Nhận lệnh bắt đầu game:', data.mode);
+          console.log('Nhận lệnh bắt đầu game');
           soundEngine.playFanfare();
-          if (this.app) {
-            if (data.mode === 'minigame') {
-              this.app.miniGame.startTimelineGame();
-            } else if (data.mode === 'quiz') {
-              this.app.startQuizBattle();
-            }
+          if (this.app && this.app.miniGame) {
+            this.app.miniGame.startTimelineGame();
           }
           break;
 

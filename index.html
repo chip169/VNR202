@@ -81,18 +81,6 @@
             <span class="btn-spark-particle spark-2">✦</span>
           </button>
 
-          <!-- 3 Nút Chế độ phụ bố trí ngang gọn gàng, thoáng đãng -->
-          <div class="start-sub-modes-row">
-            <button class="btn-sub-pill btn-pill-join" id="btn-open-join-modal" title="Nhập mã phòng để tham gia hội nghị">
-              📱 Nhập Mã Phòng Tham Gia
-            </button>
-            <button class="btn-sub-pill btn-pill-minigame" id="btn-mode-minigame" title="Chơi Đơn Mini-game Mật Thư & Dòng Thời Gian">
-              🧩 Chơi Đơn: Mini-Game
-            </button>
-            <button class="btn-sub-pill btn-pill-quiz" id="btn-mode-campaign" title="Chơi Đơn Trắc nghiệm 100 Câu">
-              📖 Chơi Đơn: 100 Câu
-            </button>
-          </div>
         </div>
       </div>
     </main>
@@ -200,8 +188,7 @@
           <div class="lobby-footer">
             <button class="btn-secondary" id="btn-lobby-back">⬅ Rời Phòng</button>
             <div class="lobby-host-actions" id="lobby-host-actions">
-              <button class="btn-secondary-mode" id="btn-lobby-start-quiz">📖 Bắt Đầu: Trắc Nghiệm</button>
-              <button class="btn-primary-start" id="btn-start-lobby-game">🧩 BẮT ĐẦU: MINI-GAME</button>
+              <button class="btn-primary-start" id="btn-start-lobby-game">🚀 BẮT ĐẦU TRÒ CHƠI</button>
             </div>
           </div>
         </div>
@@ -318,57 +305,6 @@
       </div>
     </section>
 
-    <!-- ================= 5. ĐẤU TRƯỜNG ĐỐ VUI (BATTLE ARENA) ================= -->
-    <section id="battle-screen" class="screen">
-      <div class="battle-arena-wrapper">
-        <!-- Header HUD trận đấu -->
-        <div class="battle-header-hud">
-          <div class="player-status-badge">
-            <span class="status-avatar">⭐</span>
-            <div class="status-meta">
-              <span class="status-name">Đại Biểu 1930</span>
-              <span class="status-score"><span id="player-score">0</span> Điểm</span>
-            </div>
-          </div>
-
-          <!-- Đồng hồ bấm giờ tròn 15s -->
-          <div class="timer-container">
-            <svg class="timer-circle-svg" viewBox="0 0 72 72">
-              <circle class="timer-bg-ring" cx="36" cy="36" r="31"></circle>
-              <circle class="timer-progress-ring" id="timer-ring" cx="36" cy="36" r="31"></circle>
-            </svg>
-            <span class="timer-label-num" id="timer-val">15</span>
-          </div>
-
-          <div class="combo-badge" id="combo-badge" style="display: none;">
-            🔥 Combo x1
-          </div>
-        </div>
-
-        <!-- Dải thanh vị trí đối thủ trực tiếp -->
-        <div class="rival-ticker-bar" id="rival-ticker-bar" style="display: none;"></div>
-
-        <!-- Khung câu hỏi lịch sử chính -->
-        <div class="battle-main-layout">
-          <div class="question-stage-card">
-            <div class="question-era-tag" id="question-era-tag">🏛️ Giai đoạn Lịch sử</div>
-            <h2 class="question-text" id="question-text">Đang tải câu hỏi...</h2>
-            <p class="question-historical-context" id="question-context"></p>
-          </div>
-
-          <!-- 4 Lựa chọn trả lời -->
-          <div class="answers-grid" id="answers-grid">
-            <!-- Sinh tự động từ questions.js -->
-          </div>
-        </div>
-
-        <!-- Tư liệu lịch sử chú giải sau khi trả lời -->
-        <div class="insight-popover" id="insight-popover">
-          <div class="insight-title">📜 TƯ LIỆU LỊCH SỬ CHÍNH XÁC:</div>
-          <div class="insight-body" id="insight-text"></div>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= 4. MÀN HÌNH TỔNG KẾT & VINH DANH (SUMMARY & PODIUM) ================= -->
     <section id="summary-screen" class="screen">
@@ -411,7 +347,6 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="questions.js"></script>
   <script src="sound.js"></script>
   <script src="particles.js"></script>
   <script src="minigames.js"></script>
