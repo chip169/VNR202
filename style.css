@@ -2753,13 +2753,7 @@ html, body {
 }
 
 .speed-event-hint {
-  font-size: 0.82rem;
-  color: var(--gold-glow);
-  background: rgba(255, 215, 0, 0.08);
-  border-left: 3px solid var(--gold-primary);
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-style: italic;
+  display: none !important;
 }
 
 /* Animations Thẻ */
