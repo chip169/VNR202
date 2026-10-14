@@ -169,6 +169,13 @@ class MultiplayerManager {
         case 'START_GAME':
           console.log('Nhận lệnh bắt đầu game');
           soundEngine.playFanfare();
+          this.finishedPlayers = [];
+          this.players.forEach(p => {
+            p.isFinished = false;
+            p.score = 0;
+            p.timeSeconds = 0;
+            p.formattedTime = null;
+          });
           if (this.app && this.app.miniGame) {
             this.app.miniGame.startTimelineGame();
           }
@@ -185,9 +192,34 @@ class MultiplayerManager {
           }
           break;
 
+        // Khi một đại biểu hoàn thành toàn bộ nhiệm vụ
+        case 'PLAYER_FINISHED':
+          const finPlayer = data.player;
+          if (finPlayer) {
+            const fIdx = this.finishedPlayers.findIndex(p => p.id === finPlayer.id);
+            if (fIdx >= 0) {
+              this.finishedPlayers[fIdx] = finPlayer;
+            } else {
+              this.finishedPlayers.push(finPlayer);
+            }
+            // Cập nhật trong danh sách người chơi phòng
+            const pRoom = this.players.find(p => p.id === finPlayer.id);
+            if (pRoom) {
+              pRoom.score = finPlayer.score;
+              pRoom.timeSeconds = finPlayer.timeSeconds;
+              pRoom.formattedTime = finPlayer.formattedTime;
+              pRoom.isFinished = true;
+            }
+            if (this.app && typeof this.app.updateLiveLeaderboard === 'function') {
+              this.app.updateLiveLeaderboard();
+            }
+          }
+          break;
+
         // Người chơi rời phòng
         case 'PLAYER_LEAVE':
           this.players = this.players.filter(p => p.id !== data.playerId);
+          this.finishedPlayers = this.finishedPlayers.filter(p => p.id !== data.playerId);
           this.updateLobbyUI();
           if (this.isHost) this.broadcastRoster();
           break;
@@ -209,10 +241,76 @@ class MultiplayerManager {
   // Bắt đầu game cho tất cả các máy trong phòng
   broadcastStartGame(mode) {
     if (!this.isHost) return;
+    this.finishedPlayers = [];
+    this.players.forEach(p => {
+      p.isFinished = false;
+      p.score = 0;
+      p.timeSeconds = 0;
+      p.formattedTime = null;
+    });
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'START_GAME',
       mode: mode // 'minigame' hoặc 'quiz'
     });
+  }
+
+  // Gửi thông báo đại biểu hoàn thành tất cả nhiệm vụ
+  sendPlayerFinished(finishData) {
+    const myFinishEntry = {
+      id: this.playerId,
+      name: this.playerName,
+      avatar: this.playerAvatar,
+      score: finishData.score,
+      timeSeconds: finishData.timeSeconds,
+      formattedTime: finishData.formattedTime,
+      finishedAt: Date.now()
+    };
+
+    const exIdx = this.finishedPlayers.findIndex(p => p.id === this.playerId);
+    if (exIdx >= 0) this.finishedPlayers[exIdx] = myFinishEntry;
+    else this.finishedPlayers.push(myFinishEntry);
+
+    const me = this.players.find(p => p.id === this.playerId);
+    if (me) {
+      me.score = finishData.score;
+      me.timeSeconds = finishData.timeSeconds;
+      me.formattedTime = finishData.formattedTime;
+      me.isFinished = true;
+    }
+
+    if (this.isConnected) {
+      this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+        type: 'PLAYER_FINISHED',
+        player: myFinishEntry
+      });
+    }
+  }
+
+  // Trả về danh sách xếp hạng của phòng hiện tại
+  getRoomLeaderboard() {
+    // Kết hợp tất cả người chơi trong phòng
+    const list = this.players.map(p => {
+      const fin = this.finishedPlayers.find(f => f.id === p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        score: fin ? fin.score : (p.score || 0),
+        timeSeconds: fin ? fin.timeSeconds : (p.timeSeconds || 9999),
+        formattedTime: fin ? fin.formattedTime : (p.formattedTime || '--:--'),
+        isFinished: !!fin || !!p.isFinished
+      };
+    });
+
+    // Sắp xếp: Ai đã hoàn thành xếp trước (theo điểm DESC, thời gian ASC), sau đó là người chưa hoàn thành (theo điểm DESC)
+    list.sort((a, b) => {
+      if (a.isFinished && !b.isFinished) return -1;
+      if (!a.isFinished && b.isFinished) return 1;
+      if (b.score !== a.score) return b.score - a.score;
+      return a.timeSeconds - b.timeSeconds;
+    });
+
+    return list;
   }
 
   // Gửi cập nhật điểm số của máy hiện tại

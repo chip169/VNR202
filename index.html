@@ -24,8 +24,8 @@
     <!-- Thanh HUD trên cùng -->
     <header class="top-hud-bar">
       <div class="hud-actions">
-        <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem
-          Intro</button>
+        <button id="btn-leaderboard-hud" class="btn-icon btn-hud-leaderboard" title="Bảng Xếp Hạng Kỷ Lục">🏆 BXH</button>
+        <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem Intro</button>
         <button id="btn-toggle-sound" class="btn-icon" title="Bật/Tắt Âm thanh">🔔</button>
         <button id="btn-fullscreen" class="btn-icon" title="Toàn màn hình">⛶</button>
       </div>
@@ -80,7 +80,9 @@
             <span class="btn-trigger-text">🏛️ THAM GIA HỘI NGHỊ 1930</span>
             <span class="btn-spark-particle spark-2">✦</span>
           </button>
-
+          <button class="btn-leaderboard-start" id="btn-start-leaderboard" title="Xem Bảng Xếp Hạng Kỷ Lục">
+            <span>🏆 BẢNG XẾP HẠNG KỶ LỤC</span>
+          </button>
         </div>
       </div>
     </main>
@@ -208,6 +210,10 @@
             </div>
           </div>
           <div class="minigame-stats-row">
+            <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian làm nhiệm vụ">
+              <span class="timer-icon">⏱️</span>
+              <strong id="timeline-stopwatch-val">00:00</strong>
+            </div>
             <div class="minigame-score-box">
               <span>ĐIỂM:</span>
               <strong id="timeline-score-val">0đ</strong>
@@ -255,6 +261,10 @@
             </div>
           </div>
           <div class="minigame-stats-row">
+            <div class="minigame-timer-box" id="cipher-timer-box" title="Thời gian làm nhiệm vụ">
+              <span class="timer-icon">⏱️</span>
+              <strong id="cipher-stopwatch-val">00:00</strong>
+            </div>
             <div class="cipher-remaining-pill" id="cipher-remaining-badge">Còn 5 Bức Điện Mật</div>
             <button class="btn-minigame-exit" id="btn-cipher-back" title="Về Màn Hình Chính">✖ Rời Game</button>
           </div>
@@ -350,24 +360,49 @@
           <h2 class="summary-headline">HOÀN THÀNH HÀNH TRÌNH</h2>
           <div class="summary-rank-badge" id="summary-rank-badge">Chiến Sĩ Tiên Phong Cách Mạng (1930)</div>
 
-          <!-- Thống kê điểm số -->
+          <!-- Thống kê điểm số & thời gian hoàn thành -->
           <div class="stats-summary-grid">
             <div class="stat-box">
               <div class="stat-val" id="final-score-val">0đ</div>
               <div class="stat-desc">Tổng Điểm</div>
             </div>
-            <div class="stat-box">
-              <div class="stat-val" id="final-combo-val">x0</div>
-              <div class="stat-desc">Chuỗi Combo Tối Đa</div>
+            <div class="stat-box highlight-time">
+              <div class="stat-val" id="final-time-val">00:00</div>
+              <div class="stat-desc">⏱️ Thời Gian</div>
             </div>
             <div class="stat-box">
-              <div class="stat-val" id="final-rank-val">10/10</div>
-              <div class="stat-desc">Số Câu Hoàn Thành</div>
+              <div class="stat-val" id="final-speed-bonus">+0đ</div>
+              <div class="stat-desc">Thưởng Tốc Độ</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="final-rank-val">2/2 Màn</div>
+              <div class="stat-desc">Hoàn Tất</div>
             </div>
           </div>
 
           <!-- Bảng xếp hạng bục vinh quang -->
-          <div class="final-podium-list" id="final-podium-list"></div>
+          <div class="summary-leaderboard-box">
+            <div class="summary-lb-header">
+              <div class="lb-title-wrap">
+                <span class="lb-trophy">🏆</span>
+                <span class="lb-title">BẢNG XẾP HẠNG ĐẠI BIỂU</span>
+              </div>
+              <div class="summary-lb-tabs">
+                <button type="button" class="sum-tab-btn active" id="sum-tab-room">🏛️ Phòng Đấu</button>
+                <button type="button" class="sum-tab-btn" id="sum-tab-hall">⭐ Bảng Vàng</button>
+              </div>
+            </div>
+
+            <div class="lb-table-head">
+              <span class="col-rank">Hạng</span>
+              <span class="col-player">Đại Biểu</span>
+              <span class="col-time">Thời Gian</span>
+              <span class="col-score">Điểm Số</span>
+            </div>
+            <div class="final-podium-list" id="final-podium-list">
+              <!-- Render tự động từ app.js -->
+            </div>
+          </div>
 
           <!-- Hành động -->
           <div class="summary-actions-row">
@@ -376,6 +411,43 @@
         </div>
       </div>
     </section>
+
+    <!-- ================= 5. MODAL BẢNG XẾP HẠNG TOÀN CỤC ================= -->
+    <div id="modal-leaderboard" class="modal-overlay" style="display: none;">
+      <div class="modal-card leaderboard-modal">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-icon">🏆</span>
+            <div>
+              <h3>BẢNG XẾP HẠNG ĐẠI BIỂU CỬU LONG</h3>
+              <small>Vinh danh tốc độ và sự chính xác của các đại biểu (1930)</small>
+            </div>
+          </div>
+          <button class="btn-modal-close" id="btn-close-leaderboard" title="Đóng">✖</button>
+        </div>
+
+        <div class="modal-tabs">
+          <button type="button" class="modal-tab-btn active" id="modal-tab-room">🏛️ Phòng Thi Đấu</button>
+          <button type="button" class="modal-tab-btn" id="modal-tab-hall">⭐ Bảng Vàng Kỷ Lục</button>
+        </div>
+
+        <div class="leaderboard-table-container">
+          <div class="lb-table-head">
+            <span class="col-rank">Hạng</span>
+            <span class="col-player">Đại Biểu</span>
+            <span class="col-time">Thời Gian</span>
+            <span class="col-score">Điểm Số</span>
+          </div>
+          <div class="leaderboard-rows-list" id="modal-leaderboard-list">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-close-leaderboard-footer">Đóng</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->

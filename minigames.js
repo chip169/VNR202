@@ -87,12 +87,47 @@ class MiniGameEngine {
     this.selectedEvent = null;
     this.selectedLocale = null;
     this.decodedReports = [];
+
+    // Stopwatch & Time Tracking
+    this.gameStartTime = null;
+    this.stopwatchInterval = null;
+    this.elapsedSeconds = 0;
+  }
+
+  formatTime(totalSec) {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  startStopwatch() {
+    this.stopStopwatch();
+    const updateDisplay = () => {
+      if (!this.gameStartTime) return;
+      this.elapsedSeconds = Math.floor((Date.now() - this.gameStartTime) / 1000);
+      const str = this.formatTime(this.elapsedSeconds);
+      const tlVal = document.getElementById('timeline-stopwatch-val');
+      const cpVal = document.getElementById('cipher-stopwatch-val');
+      if (tlVal) tlVal.innerText = str;
+      if (cpVal) cpVal.innerText = str;
+    };
+    updateDisplay();
+    this.stopwatchInterval = setInterval(updateDisplay, 1000);
+  }
+
+  stopStopwatch() {
+    if (this.stopwatchInterval) {
+      clearInterval(this.stopwatchInterval);
+      this.stopwatchInterval = null;
+    }
   }
 
   // ================= 1. MINI-GAME: TRỤC THỜI GIAN =================
   startTimelineGame() {
     this.timelineLevelIdx = 0;
     this.timelineScore = 0;
+    this.gameStartTime = Date.now();
+    this.startStopwatch();
     this.app.switchScreen('timeline-game-screen');
     this.loadTimelineStage(this.timelineLevelIdx);
   }
@@ -519,12 +554,45 @@ class MiniGameEngine {
 
   finishAllMiniGames() {
     soundEngine.playFanfare();
-    this.app.score = this.timelineScore;
-    this.app.maxCombo = 5;
-    this.app.showSummary();
-    
-    // Tùy chỉnh danh hiệu vinh danh đặc biệt cho người hoàn thành Mini-game
-    document.getElementById('summary-rank-badge').innerText = "🏆 ĐẠI BIỂU XUẤT SẮC HỘI NGHỊ CỬU LONG (1930) 🌟";
-    document.getElementById('final-rank-val').innerText = "Hoàn thành 2 Màn Chơi!";
+    this.stopStopwatch();
+
+    // Tính chính xác thời gian hoàn thành
+    const totalSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));
+    const formattedTime = this.formatTime(totalSec);
+
+    // Tính điểm thưởng tốc độ (Speed Bonus)
+    let speedBonus = 50;
+    if (totalSec <= 60) {
+      speedBonus = 600;
+    } else if (totalSec <= 90) {
+      speedBonus = 450;
+    } else if (totalSec <= 120) {
+      speedBonus = 300;
+    } else if (totalSec <= 180) {
+      speedBonus = 150;
+    }
+
+    const totalFinalScore = this.timelineScore + speedBonus;
+    this.app.score = totalFinalScore;
+
+    // Báo cáo hoàn thành lên máy chủ / phòng multiplayer nếu có
+    if (this.app && this.app.multiplayer) {
+      this.app.multiplayer.sendPlayerFinished({
+        score: totalFinalScore,
+        timeSeconds: totalSec,
+        formattedTime: formattedTime
+      });
+    }
+
+    // Hiển thị màn hình tổng kết & bảng vinh danh
+    this.app.showSummary({
+      score: totalFinalScore,
+      rawScore: this.timelineScore,
+      speedBonus: speedBonus,
+      timeSeconds: totalSec,
+      formattedTime: formattedTime
+    });
+
+    this.gameStartTime = null;
   }
 }

@@ -349,6 +349,79 @@ class HistoricalQuizApp {
         this.switchScreen('start-screen');
       });
     }
+
+    // 9. Nút mở Bảng Xếp Hạng từ thanh Top HUD & Start Screen
+    const hudLbBtn = document.getElementById('btn-leaderboard-hud');
+    if (hudLbBtn) {
+      hudLbBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.openLeaderboardModal(this.multiplayer.players.length > 1 ? 'room' : 'hall');
+      });
+    }
+
+    const startLbBtn = document.getElementById('btn-start-leaderboard');
+    if (startLbBtn) {
+      startLbBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.openLeaderboardModal('hall');
+      });
+    }
+
+    // 10. Đóng Modal Bảng Xếp Hạng
+    const closeLbBtn = document.getElementById('btn-close-leaderboard');
+    if (closeLbBtn) closeLbBtn.addEventListener('click', () => this.closeLeaderboardModal());
+
+    const closeLbFoot = document.getElementById('btn-close-leaderboard-footer');
+    if (closeLbFoot) closeLbFoot.addEventListener('click', () => this.closeLeaderboardModal());
+
+    const lbModalOverlay = document.getElementById('modal-leaderboard');
+    if (lbModalOverlay) {
+      lbModalOverlay.addEventListener('click', (e) => {
+        if (e.target === lbModalOverlay) this.closeLeaderboardModal();
+      });
+    }
+
+    // 11. Tabs trong Modal Bảng Xếp Hạng
+    const modalTabRoom = document.getElementById('modal-tab-room');
+    const modalTabHall = document.getElementById('modal-tab-hall');
+    if (modalTabRoom && modalTabHall) {
+      modalTabRoom.addEventListener('click', () => {
+        soundEngine.playClick();
+        modalTabRoom.classList.add('active');
+        modalTabHall.classList.remove('active');
+        this.activeModalTab = 'room';
+        this.renderLeaderboard(document.getElementById('modal-leaderboard-list'), 'room');
+      });
+
+      modalTabHall.addEventListener('click', () => {
+        soundEngine.playClick();
+        modalTabHall.classList.add('active');
+        modalTabRoom.classList.remove('active');
+        this.activeModalTab = 'hall';
+        this.renderLeaderboard(document.getElementById('modal-leaderboard-list'), 'hall');
+      });
+    }
+
+    // 12. Tabs trong Summary Screen
+    const sumTabRoom = document.getElementById('sum-tab-room');
+    const sumTabHall = document.getElementById('sum-tab-hall');
+    if (sumTabRoom && sumTabHall) {
+      sumTabRoom.addEventListener('click', () => {
+        soundEngine.playClick();
+        sumTabRoom.classList.add('active');
+        sumTabHall.classList.remove('active');
+        this.activeSummaryTab = 'room';
+        this.renderLeaderboard(document.getElementById('final-podium-list'), 'room');
+      });
+
+      sumTabHall.addEventListener('click', () => {
+        soundEngine.playClick();
+        sumTabHall.classList.add('active');
+        sumTabRoom.classList.remove('active');
+        this.activeSummaryTab = 'hall';
+        this.renderLeaderboard(document.getElementById('final-podium-list'), 'hall');
+      });
+    }
   }
 
   // Mở màn hình Đăng Ký Đại Biểu (khi quét mã QR hoặc mở link tham gia)
@@ -375,35 +448,194 @@ class HistoricalQuizApp {
     }
   }
 
-  // Màn hình tổng kết và vinh danh
-  showSummary() {
+  // ================= BẢNG XẾP HẠNG & KỶ LỤC =================
+  getHallOfFame() {
+    try {
+      const stored = localStorage.getItem('vnr202_hall_of_fame');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc localStorage:', e);
+    }
+
+    // Danh sách kỷ lục lịch sử ban đầu làm mẫu cạnh tranh hào hùng
+    const initialRecords = [
+      { name: "Nguyễn Ái Quốc", avatar: "⭐", score: 2600, timeSeconds: 45, formattedTime: "00:45", date: "3/2/1930", badge: "Chủ Trì Hội Nghị Cửu Long" },
+      { name: "Trần Phú", avatar: "📜", score: 2350, timeSeconds: 58, formattedTime: "00:58", date: "10/1930", badge: "Tổng Bí Thư Đầu Tiên" },
+      { name: "Nguyễn Đức Cảnh", avatar: "⚒️", score: 2150, timeSeconds: 72, formattedTime: "01:12", date: "1928", badge: "Phong Trào Vô Sản Hóa" },
+      { name: "Đại Biểu Nam Kỳ", avatar: "🚢", score: 1950, timeSeconds: 88, formattedTime: "01:28", date: "1929", badge: "An Nam Cộng Sản Đảng" },
+      { name: "Chiến Sĩ Sa Diện", avatar: "⚡", score: 1800, timeSeconds: 96, formattedTime: "01:36", date: "1924", badge: "Tiếng Bom Quảng Châu" }
+    ];
+    localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(initialRecords));
+    return initialRecords;
+  }
+
+  saveRecordToHallOfFame(record) {
+    try {
+      const list = this.getHallOfFame();
+      list.push(record);
+      // Sắp xếp theo điểm DESC, sau đó theo thời gian ASC
+      list.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.timeSeconds - b.timeSeconds;
+      });
+      // Giữ tối đa top 12 kỷ lục xuất sắc nhất
+      const topList = list.slice(0, 12);
+      localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(topList));
+      return topList;
+    } catch (e) {
+      console.warn('Lỗi lưu kỷ lục:', e);
+      return [];
+    }
+  }
+
+  // Kết xuất danh sách Bảng Xếp Hạng vào thẻ container
+  renderLeaderboard(containerEl, tabType = 'room') {
+    if (!containerEl) return;
+    containerEl.innerHTML = '';
+
+    let items = [];
+
+    if (tabType === 'room') {
+      // Lấy từ phòng thi đấu trực tiếp (Multiplayer)
+      items = this.multiplayer ? this.multiplayer.getRoomLeaderboard() : [];
+      if (items.length === 0) {
+        // Nếu chơi solo thì hiển thị kết quả của người chơi hiện tại
+        items = [{
+          id: this.multiplayer ? this.multiplayer.playerId : 'me',
+          name: (this.multiplayer && this.multiplayer.playerName) ? this.multiplayer.playerName : 'Bạn (Đại Biểu 1930)',
+          avatar: (this.multiplayer && this.multiplayer.playerAvatar) ? this.multiplayer.playerAvatar : '⭐',
+          score: this.score || 0,
+          formattedTime: this.lastFormattedTime || '01:25',
+          isFinished: true
+        }];
+      }
+    } else {
+      // Lấy từ Bảng Vàng Kỷ Lục
+      items = this.getHallOfFame();
+    }
+
+    items.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'podium-item';
+
+      const isMe = (this.multiplayer && item.id === this.multiplayer.playerId) || item.isCurrentPlayer;
+      if (isMe) row.classList.add('highlight');
+
+      let rankBadge = `#${idx + 1}`;
+      if (idx === 0) rankBadge = '🥇';
+      else if (idx === 1) rankBadge = '🥈';
+      else if (idx === 2) rankBadge = '🥉';
+
+      const timeText = item.formattedTime ? `⏱️ ${item.formattedTime}` : (item.isFinished ? 'Hoàn thành' : 'Đang giải mã...');
+      const scoreText = `${item.score.toLocaleString()}đ`;
+
+      row.innerHTML = `
+        <span class="col-rank rank-${idx + 1}">${rankBadge}</span>
+        <div class="col-player">
+          <span class="player-mini-avatar">${item.avatar || '⭐'}</span>
+          <span class="player-mini-name">${item.name} ${isMe ? '<strong class="me-tag">(Bạn)</strong>' : ''}</span>
+        </div>
+        <span class="col-time">${timeText}</span>
+        <strong class="col-score">${scoreText}</strong>
+      `;
+
+      containerEl.appendChild(row);
+    });
+  }
+
+  // Cập nhật live leaderboard khi có người chơi khác về đích
+  updateLiveLeaderboard() {
+    const sumPodium = document.getElementById('final-podium-list');
+    if (sumPodium && this.activeSummaryTab === 'room') {
+      this.renderLeaderboard(sumPodium, 'room');
+    }
+    const modalList = document.getElementById('modal-leaderboard-list');
+    if (modalList && this.activeModalTab === 'room') {
+      this.renderLeaderboard(modalList, 'room');
+    }
+  }
+
+  openLeaderboardModal(tab = 'room') {
+    this.activeModalTab = tab;
+    const modal = document.getElementById('modal-leaderboard');
+    const tabRoom = document.getElementById('modal-tab-room');
+    const tabHall = document.getElementById('modal-tab-hall');
+    const listEl = document.getElementById('modal-leaderboard-list');
+
+    if (tabRoom && tabHall) {
+      tabRoom.classList.toggle('active', tab === 'room');
+      tabHall.classList.toggle('active', tab === 'hall');
+    }
+
+    this.renderLeaderboard(listEl, tab);
+    if (modal) modal.style.display = 'flex';
+  }
+
+  closeLeaderboardModal() {
+    const modal = document.getElementById('modal-leaderboard');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // ================= MÀN HÌNH TỔNG KẾT VÀ VINH DANH =================
+  showSummary(summaryData = {}) {
     clearInterval(this.timerInterval);
     soundEngine.playFanfare();
     this.switchScreen('summary-screen');
 
-    document.getElementById('final-score-val').innerText = `${this.score}đ`;
-    document.getElementById('final-combo-val').innerText = `x${this.maxCombo}`;
-    document.getElementById('final-rank-val').innerText = `Hoàn thành 2 Màn Chơi!`;
+    const finalScore = summaryData.score !== undefined ? summaryData.score : this.score;
+    const formattedTime = summaryData.formattedTime || '01:30';
+    const totalSec = summaryData.timeSeconds || 90;
+    const speedBonus = summaryData.speedBonus !== undefined ? summaryData.speedBonus : 150;
+    this.lastFormattedTime = formattedTime;
 
-    // Danh hiệu lịch sử
+    const scoreEl = document.getElementById('final-score-val');
+    const timeEl = document.getElementById('final-time-val');
+    const bonusEl = document.getElementById('final-speed-bonus');
+    const rankEl = document.getElementById('final-rank-val');
+
+    if (scoreEl) scoreEl.innerText = `${finalScore.toLocaleString()}đ`;
+    if (timeEl) timeEl.innerText = formattedTime;
+    if (bonusEl) bonusEl.innerText = `+${speedBonus}đ`;
+    if (rankEl) rankEl.innerText = `2/2 Màn`;
+
+    // Lưu vào Bảng Vàng Kỷ Lục LocalStorage
+    const playerName = (this.multiplayer && this.multiplayer.playerName) ? this.multiplayer.playerName : 'Đại biểu Hội nghị';
+    const playerAvatar = (this.multiplayer && this.multiplayer.playerAvatar) ? this.multiplayer.playerAvatar : '⭐';
+    
+    this.saveRecordToHallOfFame({
+      name: playerName,
+      avatar: playerAvatar,
+      score: finalScore,
+      timeSeconds: totalSec,
+      formattedTime: formattedTime,
+      date: new Date().toLocaleDateString('vi-VN'),
+      isCurrentPlayer: true
+    });
+
+    // Danh hiệu lịch sử theo điểm số
     let rankTitle = "Chiến Sĩ Tiên Phong Cách Mạng (1930)";
-    if (this.score >= 1400) {
-      rankTitle = "Đại Biểu Xuất Sắc Cửu Long (1930) 🌟";
-    } else if (this.score >= 900) {
-      rankTitle = "Đại Biểu Kiên Trung Cách Mạng (1930) ⭐";
+    if (finalScore >= 1900) {
+      rankTitle = "🏆 ĐẠI BIỂU XUẤT SẮC HỘI NGHỊ CỬU LONG (1930) 🌟";
+    } else if (finalScore >= 1400) {
+      rankTitle = "⭐ ĐẠI BIỂU KIÊN TRUNG CÁCH MẠNG (1930) ⭐";
     } else {
-      rankTitle = "Hội Viên Thanh Niên Cách Mạng (1925)";
+      rankTitle = "📜 HỘI VIÊN THANH NIÊN CÁCH MẠNG (1925)";
     }
-    document.getElementById('summary-rank-badge').innerText = rankTitle;
+    const badgeEl = document.getElementById('summary-rank-badge');
+    if (badgeEl) badgeEl.innerText = rankTitle;
 
-    // Render bảng tổng kết vinh danh
-    const podiumEl = document.getElementById('final-podium-list');
-    podiumEl.innerHTML = `
-      <div class="podium-item highlight">
-        <span>🏆 ⭐ Bạn (Đại Biểu 1930)</span>
-        <strong>${this.score} điểm</strong>
-      </div>
-    `;
+    // Hiển thị tab phòng đấu mặc định
+    this.activeSummaryTab = 'room';
+    const sumTabRoom = document.getElementById('sum-tab-room');
+    const sumTabHall = document.getElementById('sum-tab-hall');
+    if (sumTabRoom && sumTabHall) {
+      sumTabRoom.classList.add('active');
+      sumTabHall.classList.remove('active');
+    }
+    this.renderLeaderboard(document.getElementById('final-podium-list'), 'room');
   }
 }
 
