@@ -91,7 +91,7 @@ class HistoricalQuizApp {
         playerName: this.multiplayer ? this.multiplayer.playerName : '',
         playerAvatar: this.multiplayer ? this.multiplayer.playerAvatar : (this.selectedAvatar || '⭐'),
         gameEndAt: (this.multiplayer && this.multiplayer.gameEndAt) || this.projectorEndAt || (this.miniGame && this.miniGame.gameEndTime) || 0,
-        gameDuration: (this.multiplayer && this.multiplayer.gameDuration) || this.projectorDuration || 600,
+        gameDuration: (this.multiplayer && this.multiplayer.gameDuration) || this.projectorDuration || 300,
         score: (this.miniGame && this.miniGame.timelineScore) || this.score || 0,
         streakCount: (this.miniGame && this.miniGame.streakCount) || 0,
         timestamp: Date.now(),
@@ -132,7 +132,7 @@ class HistoricalQuizApp {
         this.multiplayer.createRoom(s.roomId || '1930-VN');
         if (s.screen === 'projector-screen') {
           this.switchScreen('projector-screen');
-          this.startProjectorMode(s.gameDuration || 600, s.gameEndAt || 0);
+          this.startProjectorMode(s.gameDuration || 300, s.gameEndAt || 0);
           return true;
         } else if (s.screen === 'lobby-screen') {
           this.switchScreen('lobby-screen');
@@ -149,7 +149,7 @@ class HistoricalQuizApp {
         if (s.screen === 'timeline-game-screen') {
           this.multiplayer.joinRoom(pRoom, pName, pAvatar, () => {
             this.multiplayer.gameEndAt = s.gameEndAt || 0;
-            this.multiplayer.gameDuration = s.gameDuration || 600;
+            this.multiplayer.gameDuration = s.gameDuration || 300;
             if (this.miniGame) {
               this.miniGame.timelineScore = s.score || 0;
               this.miniGame.streakCount = s.streakCount || 0;
@@ -445,7 +445,7 @@ class HistoricalQuizApp {
         }
         soundEngine.playFanfare();
         const durationSel = document.getElementById('select-game-duration');
-        const dur = durationSel ? parseInt(durationSel.value, 10) : 600;
+        const dur = durationSel ? parseInt(durationSel.value, 10) : 300;
         this.multiplayer.broadcastStartGame('minigame', dur);
         // Host vào màn chiếu Spectator để quan sát, KHÔNG chơi
         this.switchScreen('projector-screen');
@@ -578,6 +578,25 @@ class HistoricalQuizApp {
       });
     }
 
+    // 13.5. Nút Chuyển sang Chặng 2 (Giải Mã Điện Tín Cửu Long) từ Màn chiếu
+    const nextStageBtn = document.getElementById('btn-projector-next-stage');
+    if (nextStageBtn) {
+      nextStageBtn.addEventListener('click', () => {
+        soundEngine.playFanfare();
+        this.projectorInStage2 = true;
+        if (this.multiplayer) {
+          this.multiplayer.broadcastSwitchStage('cipher');
+        }
+        const projBadge = document.querySelector('.projector-title-group .proj-badge');
+        if (projBadge) projBadge.innerText = '📻 CHẶNG 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG';
+        nextStageBtn.style.display = 'none';
+        this.addProjectorActivity('Chủ Tọa đã phát lệnh chuyển sang Chặng 2: Giải Mã Điện Tín Cửu Long', 'broadcast');
+        // Đồng hồ 5 phút tiếp tục cho Chặng 2
+        this.projectorDuration = 300;
+        this.projectorEndAt = Date.now() + 300000;
+      });
+    }
+
     // 14. Nút Kết thúc sớm từ Projector Screen (Không dùng confirm chặn luồng)
     const endEarlyBtn = document.getElementById('btn-end-game-early');
     if (endEarlyBtn) {
@@ -606,9 +625,16 @@ class HistoricalQuizApp {
 
   // Khởi động chế độ quan sát màn chiếu (Host) với đồng hồ đếm ngược
   startProjectorMode(durationSeconds, endAt) {
-    this.projectorEndAt = endAt;
-    this.projectorDuration = durationSeconds;
+    this.projectorDuration = durationSeconds || 300;
+    this.projectorEndAt = endAt || (Date.now() + this.projectorDuration * 1000);
     this.projectorActivityFeed = [];
+    this.projectorInStage2 = false;
+
+    const nextStageBtn = document.getElementById('btn-projector-next-stage');
+    if (nextStageBtn) nextStageBtn.style.display = 'inline-flex';
+
+    const projBadge = document.querySelector('.projector-title-group .proj-badge');
+    if (projBadge) projBadge.innerText = '📜 CHẶNG 1: TRI THỨC LỊCH SỬ SIÊU TỐC';
 
     // Render QR code nhỏ trong màn chiếu
     const projQrBox = document.getElementById('proj-qr-box');
@@ -682,8 +708,28 @@ class HistoricalQuizApp {
     const pct = this.projectorDuration > 0 ? (remaining / (this.projectorDuration * 1000)) * 100 : 100;
     if (barFill) barFill.style.width = `${Math.max(0, pct)}%`;
 
-    // Khi hết giờ -> tự động kết thúc và hiện podium
+    // Khi hết giờ:
     if (remaining === 0) {
+      if (!this.projectorInStage2) {
+        // Hết 5 phút Chặng 1 -> Tự động chuyển toàn hội nghị sang Chặng 2!
+        this.projectorInStage2 = true;
+        soundEngine.playFanfare();
+        if (this.multiplayer) {
+          this.multiplayer.broadcastSwitchStage('cipher');
+        }
+        const projBadge = document.querySelector('.projector-title-group .proj-badge');
+        if (projBadge) projBadge.innerText = '📻 CHẶNG 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG';
+        const nextStageBtn = document.getElementById('btn-projector-next-stage');
+        if (nextStageBtn) nextStageBtn.style.display = 'none';
+        this.addProjectorActivity('Hết 5 phút Chặng 1 ➜ Tự động chuyển toàn hội nghị sang Chặng 2: Giải Mã Điện Tín', 'broadcast');
+
+        // Bắt đầu 5 phút cho Chặng 2
+        this.projectorDuration = 300;
+        this.projectorEndAt = Date.now() + 300000;
+        return;
+      }
+
+      // Hết giờ Chặng 2 -> Tự động kết thúc và hiện podium
       this.stopProjectorMode();
       soundEngine.playFanfare();
       if (this.multiplayer) {

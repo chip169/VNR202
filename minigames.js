@@ -145,12 +145,13 @@ class MiniGameEngine {
     this.questionTotalMs = 12000;
     this.isSpeedLocked = false;
     this.freezeTimer = null;
+    this.transitionInterval = null;
 
-    // Master 10-Minute Room Timer
+    // Master Room Timer (5 phút mỗi chặng)
     this.gameStartTime = null;
     this.gameEndTime = null;
     this.masterTimer = null;
-    this.remainingMasterSeconds = 600; // Mặc định 10 phút (600 giây)
+    this.remainingMasterSeconds = 300; // Mặc định 5 phút (300 giây)
 
     // Cipher state (Màn 2 hỗ trợ dự phòng)
     this.selectedHero = null;
@@ -262,13 +263,13 @@ class MiniGameEngine {
     this.isSpeedLocked = false;
     this.gameStartTime = Date.now();
 
-    // Đồng bộ thời gian 10 phút theo phòng (nếu có multiplayer host phát endAt)
+    // Đồng bộ thời gian 5 phút cho Chặng 1 theo phòng (nếu có multiplayer host phát endAt)
     if (this.app && this.app.multiplayer && this.app.multiplayer.gameEndAt && this.app.multiplayer.gameEndAt > Date.now()) {
       this.gameEndTime = this.app.multiplayer.gameEndAt;
       this.remainingMasterSeconds = Math.max(10, Math.floor((this.gameEndTime - Date.now()) / 1000));
     } else {
-      this.remainingMasterSeconds = 600; // 10 phút mặc định
-      this.gameEndTime = Date.now() + 600000;
+      this.remainingMasterSeconds = 300; // 5 phút mặc định cho Chặng 1
+      this.gameEndTime = Date.now() + 300000;
     }
 
     this.initQuestionQueue();
@@ -279,7 +280,7 @@ class MiniGameEngine {
     this.loadNextQuestion();
   }
 
-  // Vòng lặp đếm ngược 10 phút xuyên suốt màn chơi
+  // Vòng lặp đếm ngược xuyên suốt màn chơi
   startMasterCountdown() {
     this.stopMasterTimer();
     const updateDisplay = () => {
@@ -293,11 +294,17 @@ class MiniGameEngine {
       if (tlVal) tlVal.innerText = str;
       if (cpVal) cpVal.innerText = str;
 
-      // Khi đếm về 00:00 -> Tự động kết thúc trận đấu và xuất bảng xếp hạng
+      // Khi đếm về 00:00:
+      // Nếu đang ở Chặng 1 -> Tự động chuyển sang Chặng 2!
+      // Nếu đang ở Chặng 2 -> Hoàn tất trò chơi và xuất kết quả
       if (secLeft <= 0) {
         this.stopMasterTimer();
         this.clearSpeedTimer();
-        this.finishAllMiniGames();
+        if (this.app && this.app.currentScreen === 'timeline-game-screen') {
+          this.transitionToCipherStage();
+        } else {
+          this.finishAllMiniGames();
+        }
       }
     };
 
@@ -359,7 +366,7 @@ class MiniGameEngine {
     }
 
     if (stepEl) {
-      stepEl.innerText = `Câu ${this.questionIndex} (Chuỗi đúng: ${this.streakCount})`;
+      stepEl.innerText = `Câu ${this.questionIndex}/10 (Chặng 1) • Chuỗi: ${this.streakCount}`;
     }
 
     // Cập nhật Danh hiệu đại biểu theo điểm số
@@ -532,7 +539,11 @@ class MiniGameEngine {
           b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
           if (typeof b.blur === 'function') b.blur();
         });
-        this.loadNextQuestion();
+        if (this.questionIndex >= 10) {
+          this.transitionToCipherStage();
+        } else {
+          this.loadNextQuestion();
+        }
       }, 750);
     } else {
       // TRẢ LỜI SAI -> KÍCH HOẠT HÌNH PHẠT ĐÓNG BĂNG 3S (ANTI-SPAM)
@@ -576,8 +587,12 @@ class MiniGameEngine {
           b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
           if (typeof b.blur === 'function') b.blur();
         });
-        // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới để không thể spam lại câu cũ
-        this.loadNextQuestion();
+        // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới hoặc Chặng 2
+        if (this.questionIndex >= 10) {
+          this.transitionToCipherStage();
+        } else {
+          this.loadNextQuestion();
+        }
       }
     }, 1000);
   }
@@ -609,55 +624,83 @@ class MiniGameEngine {
         b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
         if (typeof b.blur === 'function') b.blur();
       });
-      this.loadNextQuestion();
+      if (this.questionIndex >= 10) {
+        this.transitionToCipherStage();
+      } else {
+        this.loadNextQuestion();
+      }
     }, 1200);
   }
 
-  // Kết thúc lượt đấu khi hết 10 phút hoặc Host phát lệnh kết thúc sớm
-  finishAllMiniGames() {
+  // Chuyển đổi giữa 2 chặng: Chặng 1 (Tri Thức Siêu Tốc) -> Chặng 2 (Giải Mã Điện Tín Cửu Long)
+  transitionToCipherStage() {
     this.clearSpeedTimer();
-    this.stopMasterTimer();
     clearInterval(this.freezeTimer);
-    const overlay = document.getElementById('freeze-overlay');
-    if (overlay) overlay.style.display = 'none';
+    const freezeOverlay = document.getElementById('freeze-overlay');
+    if (freezeOverlay) freezeOverlay.style.display = 'none';
 
     soundEngine.playFanfare();
 
-    const totalSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));
-    const formattedTime = this.formatTime(totalSec);
+    const overlay = document.getElementById('stage-transition-overlay');
+    const scoreVal = document.getElementById('trans-stage1-score');
+    const btnContinue = document.getElementById('btn-trans-continue');
 
-    const totalFinalScore = this.timelineScore;
-    this.app.score = totalFinalScore;
+    if (scoreVal) scoreVal.innerText = `${this.timelineScore.toLocaleString()}đ`;
+    if (overlay) overlay.style.display = 'flex';
 
-    // Báo cáo hoàn thành lên máy chủ / phòng thi đấu
-    if (this.app && this.app.multiplayer) {
-      this.app.multiplayer.sendPlayerFinished({
-        score: totalFinalScore,
-        timeSeconds: totalSec,
-        formattedTime: formattedTime
-      });
+    let secLeft = 3;
+    if (btnContinue) {
+      btnContinue.innerHTML = `<span>BẮT ĐẦU CHẶNG 2 NGAY (${secLeft}s)</span> ➔`;
     }
 
-    // Hiển thị màn hình vinh danh & kết quả cá nhân
-    this.app.showSummary({
-      score: totalFinalScore,
-      rawScore: totalFinalScore,
-      speedBonus: 0,
-      timeSeconds: totalSec,
-      formattedTime: formattedTime
-    });
+    const startStage2 = () => {
+      clearInterval(this.transitionInterval);
+      this.transitionInterval = null;
+      if (overlay) overlay.style.display = 'none';
+      this.startCipherGame();
+    };
 
-    this.gameStartTime = null;
+    if (btnContinue) {
+      btnContinue.onclick = () => {
+        soundEngine.playClick();
+        startStage2();
+      };
+    }
+
+    clearInterval(this.transitionInterval);
+    this.transitionInterval = setInterval(() => {
+      secLeft--;
+      if (btnContinue) {
+        btnContinue.innerHTML = `<span>BẮT ĐẦU CHẶNG 2 NGAY (${secLeft}s)</span> ➔`;
+      }
+      if (secLeft <= 0) {
+        startStage2();
+      }
+    }, 1000);
   }
 
-  // ================= 2. MINI-GAME: GIẢI MÃ ĐIỆN TÍN =================
+  // ================= 2. MINI-GAME: GIẢI MÃ ĐIỆN TÍN (CHẶNG 2) =================
   startCipherGame() {
     this.decodedReports = [];
     this.selectedHero = null;
     this.selectedEvent = null;
     this.selectedLocale = null;
     this.activeCipherTab = 'heroes';
+
     this.app.switchScreen('cipher-game-screen');
+
+    // Cập nhật điểm tích lũy kế thừa từ Chặng 1 lên HUD Chặng 2
+    const scoreEl = document.getElementById('cipher-score-val');
+    if (scoreEl) scoreEl.innerText = `${this.timelineScore.toLocaleString()}đ`;
+
+    // Cập nhật đồng hồ đếm ngược phòng thi: Chặng 2 có 5 phút riêng
+    this.remainingMasterSeconds = 300;
+    this.gameEndTime = Date.now() + 300000;
+    const cpVal = document.getElementById('cipher-stopwatch-val');
+    if (cpVal) cpVal.innerText = this.formatTime(this.remainingMasterSeconds);
+
+    this.startMasterCountdown();
+
     this.initCipherTabs();
     this.renderCipherColumns();
   }
@@ -871,6 +914,9 @@ class MiniGameEngine {
       soundEngine.playCorrect();
       this.decodedReports.push(matchedRepId);
       this.timelineScore += 250;
+      const scoreEl = document.getElementById('cipher-score-val');
+      if (scoreEl) scoreEl.innerText = `${this.timelineScore.toLocaleString()}đ`;
+
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
@@ -918,6 +964,13 @@ class MiniGameEngine {
   finishAllMiniGames() {
     soundEngine.playFanfare();
     this.stopStopwatch();
+    this.clearSpeedTimer();
+    clearInterval(this.freezeTimer);
+    clearInterval(this.transitionInterval);
+    const freezeOverlay = document.getElementById('freeze-overlay');
+    if (freezeOverlay) freezeOverlay.style.display = 'none';
+    const transOverlay = document.getElementById('stage-transition-overlay');
+    if (transOverlay) transOverlay.style.display = 'none';
 
     // Tính chính xác thời gian hoàn thành
     const totalSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));

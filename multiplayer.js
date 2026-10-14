@@ -374,6 +374,17 @@ class MultiplayerManager {
           break;
         }
 
+        // Nhận lệnh chuyển chặng từ Chủ tọa (Chặng 1 -> Chặng 2)
+        case 'SWITCH_STAGE': {
+          console.log('⏩ Nhận lệnh SWITCH_STAGE từ Chủ tọa:', data);
+          soundEngine.playFanfare();
+          if (this.app && this.app.miniGame) {
+            // Chuyển sang Chặng 2 ngay lập tức
+            this.app.miniGame.transitionToCipherStage();
+          }
+          break;
+        }
+
         // Nhận lệnh kết thúc game từ chủ tọa
         case 'GAME_OVER': {
           if (data.senderId === this.playerId) break;
@@ -473,6 +484,16 @@ class MultiplayerManager {
       mode: mode || 'minigame',
       durationSeconds: dur,
       endAt: endAt
+    });
+  }
+
+  // Phát lệnh chuyển sang Chặng 2 (Host only hoặc khi hết 5 phút Chặng 1)
+  broadcastSwitchStage(targetStage = 'cipher') {
+    if (!this.isHost) return;
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'SWITCH_STAGE',
+      senderId: this.playerId,
+      targetStage: targetStage
     });
   }
 

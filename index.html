@@ -269,16 +269,39 @@
         </div>
       </div>
 
+      <!-- Lớp thông báo chuyển chặng thi đấu (Chặng 1 -> Chặng 2) -->
+      <div id="stage-transition-overlay" class="stage-transition-overlay" style="display: none;">
+        <div class="stage-transition-card animate-appear">
+          <div class="stage-trans-icon">🎉</div>
+          <div class="stage-trans-badge">XUẤT SẮC HOÀN THÀNH CHẶNG 1</div>
+          <h3 class="stage-trans-title">TIẾN VÀO CHẶNG 2:<br>GIẢI MÃ ĐIỆN TÍN CỬU LONG</h3>
+          <div class="stage-trans-score">
+            <span>ĐIỂM CHẶNG 1:</span>
+            <strong id="trans-stage1-score">0đ</strong>
+          </div>
+          <p class="stage-trans-desc">
+            📻 Ghép đúng <strong>5 bộ ba lịch sử</strong>: [Nhân Vật] + [Tác Phẩm / Sự Kiện] + [Địa Bàn] để gửi điện tín về Hội nghị 1930. Thưởng <strong>+250 điểm</strong> mỗi bức điện!
+          </p>
+          <button type="button" class="btn-trans-start" id="btn-trans-continue">
+            <span>BẮT ĐẦU CHẶNG 2 NGAY (3s)</span> ➔
+          </button>
+        </div>
+      </div>
+
       <div class="minigame-container speed-timeline-container">
         <!-- Top HUD -->
         <div class="minigame-header-hud">
-          <div class="minigame-title-badge">
-            <span class="badge-icon">🏛️</span>
-            <div>
-              <div class="badge-sub">ĐẤU TRƯỜNG TRI THỨC 1930</div>
-              <h3 id="timeline-stage-title" class="badge-main-title">Cuộc Đua 10 Phút: Ánh Sáng Cửu Long</h3>
+          <div class="minigame-hud-top-bar">
+            <div class="minigame-title-badge">
+              <span class="badge-icon">🏛️</span>
+              <div>
+                <div class="badge-sub">ĐẤU TRƯỜNG TRI THỨC 1930</div>
+                <h3 id="timeline-stage-title" class="badge-main-title">Chặng 1: Ánh Sáng Cửu Long</h3>
+              </div>
             </div>
+            <button class="btn-minigame-exit" id="btn-timeline-back" title="Rời cuộc thi về màn hình chính">✖ Rời Game</button>
           </div>
+
           <div class="minigame-stats-row">
             <!-- Huy hiệu danh hiệu -->
             <div class="player-rank-chip" id="player-rank-chip" title="Cấp bậc danh hiệu đại biểu">
@@ -289,7 +312,7 @@
             <!-- Đồng hồ đếm ngược phòng thi -->
             <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian còn lại trong phòng thi">
               <span class="timer-icon">⏱️</span>
-              <strong id="timeline-stopwatch-val">10:00</strong>
+              <strong id="timeline-stopwatch-val">05:00</strong>
             </div>
 
             <!-- Điểm số tích lũy -->
@@ -303,8 +326,6 @@
               <span>COMBO</span>
               <strong id="timeline-combo-val">x1</strong>
             </div>
-
-            <button class="btn-minigame-exit" id="btn-timeline-back" title="Rời cuộc thi về màn hình chính">✖ Rời Game</button>
           </div>
         </div>
 
@@ -313,7 +334,7 @@
           <div class="speed-timer-info">
             <span class="speed-timer-label">⏳ THỜI GIAN TRẢ LỜI:</span>
             <strong class="speed-timer-num" id="speed-countdown-num">12s</strong>
-            <span class="speed-step-indicator" id="speed-step-indicator">Câu 1 (Chuỗi: 0)</span>
+            <span class="speed-step-indicator" id="speed-step-indicator">Câu 1/10 (Chặng 1) • Chuỗi: 0</span>
           </div>
           <div class="speed-progress-track">
             <div class="speed-progress-fill" id="speed-progress-fill"></div>
@@ -347,20 +368,26 @@
       <div class="minigame-container">
         <!-- Top HUD -->
         <div class="minigame-header-hud">
-          <div class="minigame-title-badge">
-            <span class="badge-icon">📻</span>
-            <div>
-              <div class="badge-sub">MÀN 2: GIẢI MÃ ĐIỆN TÍN HỘI NGHỊ CỬU LONG</div>
-              <h3 class="badge-main-title">Ghép Bộ Ba Tư Liệu: Nhân Vật ➜ Tác Phẩm/Sự Kiện ➜ Địa Bàn</h3>
+          <div class="minigame-hud-top-bar">
+            <div class="minigame-title-badge">
+              <span class="badge-icon">📻</span>
+              <div>
+                <div class="badge-sub">CHẶNG 2: GIẢI MÃ ĐIỆN TÍN HỘI NGHỊ CỬU LONG</div>
+                <h3 class="badge-main-title">Ghép Bộ Ba: Nhân Vật ➜ Tác Phẩm/Sự Kiện ➜ Địa Bàn</h3>
+              </div>
             </div>
+            <button class="btn-minigame-exit" id="btn-cipher-back" title="Về Màn Hình Chính">✖ Rời Game</button>
           </div>
-          <div class="minigame-stats-row">
-            <div class="minigame-timer-box" id="cipher-timer-box" title="Thời gian làm nhiệm vụ">
+          <div class="minigame-stats-row cipher-stats-grid">
+            <div class="minigame-score-box">
+              <span>ĐIỂM:</span>
+              <strong id="cipher-score-val">0đ</strong>
+            </div>
+            <div class="minigame-timer-box" id="cipher-timer-box" title="Thời gian phòng thi">
               <span class="timer-icon">⏱️</span>
-              <strong id="cipher-stopwatch-val">00:00</strong>
+              <strong id="cipher-stopwatch-val">05:00</strong>
             </div>
             <div class="cipher-remaining-pill" id="cipher-remaining-badge">Còn 5 Bức Điện Mật</div>
-            <button class="btn-minigame-exit" id="btn-cipher-back" title="Về Màn Hình Chính">✖ Rời Game</button>
           </div>
         </div>
 
@@ -518,7 +545,7 @@
           </div>
           <div class="proj-countdown-box" id="proj-countdown-box">
             <div class="proj-countdown-label">⏱️ THỜI GIAN CÒN LẠI</div>
-            <div class="proj-countdown-val" id="proj-countdown-val">10:00</div>
+            <div class="proj-countdown-val" id="proj-countdown-val">05:00</div>
             <div class="proj-countdown-bar-track">
               <div class="proj-countdown-bar-fill" id="proj-countdown-bar-fill"></div>
             </div>
@@ -571,9 +598,10 @@
           </div>
         </div>
 
-        <!-- Footer với nút kết thúc sớm -->
+        <!-- Footer với nút chuyển chặng & kết thúc sớm -->
         <div class="projector-footer">
           <button class="btn-secondary" id="btn-projector-back">⬅ Về Sảnh</button>
+          <button class="btn-switch-stage" id="btn-projector-next-stage">⏩ CHUYỂN SANG CHẶNG 2 (GIẢI MÃ ĐIỆN TÍN)</button>
           <button class="btn-end-game" id="btn-end-game-early">🏁 KẾT THÚC SỚM + VINH DANH TOP 5</button>
         </div>
       </div>
