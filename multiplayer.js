@@ -1,5 +1,6 @@
 // Module Đồng Bộ Nhiều Người Chơi Trực Tuyến Thời Gian Thực (Multiplayer Real-time via MQTT)
-// Sử dụng HiveMQ Public WebSocket Broker (Hoàn toàn miễn phí, không cần tài khoản hay backend)
+// Sử dụng HiveMQ Public WebSocket Broker (Miễn phí, WSS bảo mật)
+// Kiến trúc P2P Mesh: Mọi đại biểu tự động tìm thấy nhau, tự bầu Chủ tọa nếu không có máy chủ riêng
 
 class MultiplayerManager {
   constructor(appRef) {
@@ -11,13 +12,31 @@ class MultiplayerManager {
     this.playerId = 'p_' + Math.random().toString(36).substring(2, 9);
     this.playerName = 'Đại biểu Cách mạng';
     this.playerAvatar = '⭐';
-    this.players = []; // Danh sách người chơi trong phòng
+    this.joinedAt = Date.now();
+    this.players = []; // Danh sách tất cả người chơi trong phòng
+    this.finishedPlayers = [];
+    this.heartbeatTimer = null;
+    this.reconnectTimer = null;
     this.qrInstance = null;
+  }
+
+  // Lấy bản ghi thông tin đại biểu của máy hiện tại
+  getMyRecord() {
+    return {
+      id: this.playerId,
+      name: this.playerName,
+      avatar: this.playerAvatar,
+      score: this.players.find(p => p.id === this.playerId)?.score || 0,
+      isHost: this.isHost,
+      joinedAt: this.joinedAt,
+      lastSeen: Date.now()
+    };
   }
 
   // Kết nối tới MQTT Broker qua WebSockets bảo mật (WSS)
   connect(onSuccessCallback) {
     if (this.isConnected && this.client) {
+      this.ensureSubscription();
       if (onSuccessCallback) onSuccessCallback();
       return;
     }
@@ -30,6 +49,7 @@ class MultiplayerManager {
     try {
       if (typeof Paho === 'undefined' || !Paho.MQTT) {
         console.warn('Paho MQTT library chưa sẵn sàng, thử tải lại...');
+        setTimeout(() => this.connect(onSuccessCallback), 1500);
         return;
       }
 
@@ -39,8 +59,8 @@ class MultiplayerManager {
         this.isConnected = false;
         console.warn('Mất kết nối MQTT:', responseObject.errorMessage);
         if (responseObject.errorCode !== 0) {
-          // Tự động kết nối lại sau 2 giây
-          setTimeout(() => this.connect(), 2000);
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = setTimeout(() => this.connect(), 2000);
         }
       };
 
@@ -56,13 +76,23 @@ class MultiplayerManager {
         onSuccess: () => {
           this.isConnected = true;
           console.log('✅ Kết nối MQTT Broker thành công:', clientId);
+
+          // Luôn tự động đăng ký topic của phòng khi kết nối thành công
+          this.ensureSubscription();
+
+          // Phát thông báo tham gia & yêu cầu đồng bộ danh sách phòng
+          this.sendJoinNotice();
+
+          // Khởi động chu kỳ phát nhịp tim (Heartbeat) để giữ phòng luôn sống
+          this.startHeartbeat();
+
           if (onSuccessCallback) onSuccessCallback();
         },
         onFailure: (err) => {
           this.isConnected = false;
           console.error('❌ Lỗi kết nối MQTT:', err.errorMessage);
-          // Thử kết nối lại
-          setTimeout(() => this.connect(onSuccessCallback), 3000);
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = setTimeout(() => this.connect(onSuccessCallback), 3000);
         }
       });
     } catch (e) {
@@ -70,64 +100,128 @@ class MultiplayerManager {
     }
   }
 
+  // Đảm bảo client luôn subscribe đúng topic của phòng
+  ensureSubscription() {
+    if (!this.isConnected || !this.client) return;
+    const topic = `vnr202_game/${this.roomId}/#`;
+    try {
+      this.client.subscribe(topic, { qos: 0 });
+      console.log('Đã đăng ký lắng nghe topic phòng:', topic);
+    } catch (e) {
+      console.warn('Lỗi subscribe topic:', e);
+    }
+  }
+
   // 1. TẠO PHÒNG MỚI (Dành cho Máy Chủ / Màn hình trình chiếu)
   createRoom(customRoomId) {
     this.isHost = true;
-    this.roomId = customRoomId || '1930-VN';
+    this.roomId = (customRoomId || '1930-VN').trim().toUpperCase();
     this.playerName = 'Chủ Tọa (Máy Chủ)';
     this.playerAvatar = '🏛️';
-    this.players = [
-      { id: this.playerId, name: this.playerName, avatar: this.playerAvatar, score: 0, isHost: true }
-    ];
+    this.joinedAt = Date.now();
 
-    // Cập nhật giao diện và render mã QR ngay tức thì (không đợi kết nối MQTT)
+    // Đưa ngay bản thân vào danh sách người chơi
+    this.players = [this.getMyRecord()];
+
+    // Cập nhật giao diện và render mã QR ngay tức thì
     this.updateLobbyUI();
     this.renderQRCode();
 
     this.connect(() => {
-      // Đăng ký nhận tin nhắn của phòng
-      const topic = `vnr202_game/${this.roomId}/#`;
-      this.client.subscribe(topic, { qos: 1 });
-      console.log('Đã đăng ký topic Host:', topic);
-
-      // Cập nhật lại giao diện và đồng bộ danh sách
-      this.updateLobbyUI();
-      this.renderQRCode();
       this.broadcastRoster();
     });
   }
 
   // 2. THAM GIA PHÒNG (Dành cho Điện thoại quét mã QR hoặc nhập mã)
   joinRoom(roomId, playerName, playerAvatar, onJoinedCallback) {
-    this.isHost = false;
     this.roomId = (roomId || '1930-VN').trim().toUpperCase();
-    this.playerName = (playerName || 'Đại biểu Khách').trim();
+    this.playerName = (playerName || 'Đại biểu').trim();
     this.playerAvatar = playerAvatar || '⭐';
+    this.joinedAt = Date.now();
+    this.isHost = false;
+
+    // Đưa ngay bản thân vào danh sách người chơi (hiển thị lập tức 1 đại biểu là chính mình)
+    this.players = [this.getMyRecord()];
+    this.evaluateHost();
 
     // Cập nhật giao diện và mã QR ngay tức thì
     this.updateLobbyUI();
     this.renderQRCode();
 
     this.connect(() => {
-      const topic = `vnr202_game/${this.roomId}/#`;
-      this.client.subscribe(topic, { qos: 1 });
-      console.log('Đã đăng ký topic Client:', topic);
-
-      // Gửi tín hiệu tham gia phòng
-      const joinPayload = {
-        type: 'PLAYER_JOIN',
-        player: {
-          id: this.playerId,
-          name: this.playerName,
-          avatar: this.playerAvatar,
-          score: 0,
-          isHost: false
-        }
-      };
-      this.publishMessage(`vnr202_game/${this.roomId}/events`, joinPayload);
-
       if (onJoinedCallback) onJoinedCallback();
     });
+  }
+
+  // Gửi tín hiệu thông báo mình vừa bước vào phòng & yêu cầu lấy danh sách người chơi hiện có
+  sendJoinNotice() {
+    const myRec = this.getMyRecord();
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'PLAYER_JOIN',
+      player: myRec
+    });
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'ROSTER_REQUEST',
+      fromId: this.playerId
+    });
+  }
+
+  // Gửi sự hiện diện định kỳ (Heartbeat)
+  sendMyPresence() {
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'PEER_PRESENCE',
+      player: this.getMyRecord()
+    });
+  }
+
+  // Vòng lặp nhịp tim định kỳ 2.5s
+  startHeartbeat() {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (!this.isConnected) return;
+      this.sendMyPresence();
+
+      // Dọn dẹp những người chơi không còn phản hồi trong hơn 10 giây (ngoại trừ chính mình)
+      const now = Date.now();
+      const beforeCount = this.players.length;
+      this.players = this.players.filter(p => {
+        if (p.id === this.playerId) return true;
+        return (now - (p.lastSeen || now)) < 10000;
+      });
+
+      if (this.players.length !== beforeCount) {
+        this.evaluateHost();
+        this.updateLobbyUI();
+      }
+    }, 2500);
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  // Cơ chế tự động bầu Chủ tọa phòng nếu không có máy chủ chuyên dụng
+  evaluateHost() {
+    // 1. Kiểm tra xem có ai được chỉ định làm Host không
+    const hostPlayer = this.players.find(p => p.isHost);
+    if (hostPlayer) {
+      this.isHost = (hostPlayer.id === this.playerId);
+    } else {
+      // 2. Nếu cả phòng đều vào từ link (không có máy chủ riêng), người vào phòng đầu tiên làm Chủ tọa
+      const sorted = [...this.players].sort((a, b) => {
+        return (a.joinedAt || 0) - (b.joinedAt || 0) || a.id.localeCompare(b.id);
+      });
+      if (sorted.length > 0 && sorted[0].id === this.playerId) {
+        this.isHost = true;
+        const myRec = this.players.find(p => p.id === this.playerId);
+        if (myRec) myRec.isHost = true;
+      } else {
+        this.isHost = false;
+      }
+    }
   }
 
   // Gửi thông điệp JSON lên topic
@@ -137,10 +231,10 @@ class MultiplayerManager {
       const msgStr = JSON.stringify(dataObj);
       const message = new Paho.MQTT.Message(msgStr);
       message.destinationName = topic;
-      message.qos = 1;
+      message.qos = 0;
       this.client.send(message);
     } catch (e) {
-      console.error('Lỗi gửi message MQTT:', e);
+      console.warn('Lỗi gửi message MQTT:', e);
     }
   }
 
@@ -150,32 +244,86 @@ class MultiplayerManager {
       const data = JSON.parse(payloadStr);
 
       switch (data.type) {
-        // Khi có người chơi mới tham gia
-        case 'PLAYER_JOIN':
+        // Khi có người chơi mới tham gia phòng
+        case 'PLAYER_JOIN': {
+          const incoming = data.player;
+          if (!incoming || incoming.id === this.playerId) break;
+
+          let existing = this.players.find(p => p.id === incoming.id);
+          if (!existing) {
+            this.players.push({
+              ...incoming,
+              lastSeen: Date.now()
+            });
+            soundEngine.playFanfare(); // Âm thanh ting chào mừng đại biểu mới
+          } else {
+            Object.assign(existing, incoming, { lastSeen: Date.now() });
+          }
+
+          // Lập tức gửi lại sự hiện diện của mình để đại biểu mới nhận diện ngay
+          this.sendMyPresence();
+          this.evaluateHost();
+          this.updateLobbyUI();
+
           if (this.isHost) {
-            const incomingPlayer = data.player;
-            // Kiểm tra tránh trùng lặp
-            const exists = this.players.some(p => p.id === incomingPlayer.id);
-            if (!exists) {
-              this.players.push(incomingPlayer);
-              soundEngine.playFanfare(); // Âm thanh ting chào mừng
-              this.updateLobbyUI();
+            this.broadcastRoster();
+          }
+          break;
+        }
+
+        // Nhịp tim báo hiệu sự hiện diện của các máy trong phòng
+        case 'PEER_PRESENCE': {
+          const peer = data.player;
+          if (!peer || peer.id === this.playerId) break;
+
+          let existing = this.players.find(p => p.id === peer.id);
+          if (!existing) {
+            this.players.push({
+              ...peer,
+              lastSeen: Date.now()
+            });
+            soundEngine.playFanfare();
+          } else {
+            Object.assign(existing, peer, { lastSeen: Date.now() });
+          }
+
+          this.evaluateHost();
+          this.updateLobbyUI();
+          break;
+        }
+
+        // Yêu cầu đồng bộ danh sách phòng từ thành viên mới
+        case 'ROSTER_REQUEST': {
+          if (data.fromId !== this.playerId) {
+            this.sendMyPresence();
+            if (this.isHost) {
               this.broadcastRoster();
             }
           }
           break;
+        }
 
         // Đồng bộ danh sách đại biểu cho tất cả người chơi
-        case 'ROSTER_SYNC':
-          if (!this.isHost) {
-            this.players = data.players || [];
+        case 'ROSTER_SYNC': {
+          if (Array.isArray(data.players)) {
+            data.players.forEach(p => {
+              if (p.id === this.playerId) return;
+              let existing = this.players.find(ex => ex.id === p.id);
+              if (!existing) {
+                this.players.push({ ...p, lastSeen: Date.now() });
+              } else {
+                Object.assign(existing, p, { lastSeen: Date.now() });
+              }
+            });
+            this.evaluateHost();
             this.updateLobbyUI();
           }
           break;
+        }
 
-        // Lệnh bắt đầu trò chơi từ Máy Chủ
-        case 'START_GAME':
-          console.log('Nhận lệnh bắt đầu game');
+        // Lệnh bắt đầu trò chơi từ Chủ tọa
+        case 'START_GAME': {
+          console.log('Nhận lệnh bắt đầu game từ Chủ tọa');
           soundEngine.playFanfare();
           this.finishedPlayers = [];
           this.players.forEach(p => {
@@ -188,20 +336,20 @@ class MultiplayerManager {
             this.app.miniGame.startTimelineGame();
           }
           break;
+        }
 
         // Cập nhật điểm số trực tiếp (Live Score)
-        case 'SCORE_UPDATE':
+        case 'SCORE_UPDATE': {
           const target = this.players.find(p => p.id === data.playerId);
           if (target) {
             target.score = data.score;
-            if (this.isHost) {
-              this.updateLiveRosterScores();
-            }
+            this.updateLiveRosterScores();
           }
           break;
+        }
 
         // Khi một đại biểu hoàn thành toàn bộ nhiệm vụ
-        case 'PLAYER_FINISHED':
+        case 'PLAYER_FINISHED': {
           const finPlayer = data.player;
           if (finPlayer) {
             const fIdx = this.finishedPlayers.findIndex(p => p.id === finPlayer.id);
@@ -223,14 +371,17 @@ class MultiplayerManager {
             }
           }
           break;
+        }
 
         // Người chơi rời phòng
-        case 'PLAYER_LEAVE':
+        case 'PLAYER_LEAVE': {
           this.players = this.players.filter(p => p.id !== data.playerId);
           this.finishedPlayers = this.finishedPlayers.filter(p => p.id !== data.playerId);
+          this.evaluateHost();
           this.updateLobbyUI();
           if (this.isHost) this.broadcastRoster();
           break;
+        }
       }
     } catch (err) {
       console.warn('Lỗi đọc message payload:', err);
@@ -239,7 +390,6 @@ class MultiplayerManager {
 
   // Host phát sóng danh sách người chơi cho tất cả máy con
   broadcastRoster() {
-    if (!this.isHost) return;
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'ROSTER_SYNC',
       players: this.players
@@ -248,7 +398,6 @@ class MultiplayerManager {
 
   // Bắt đầu game cho tất cả các máy trong phòng
   broadcastStartGame(mode) {
-    if (!this.isHost) return;
     this.finishedPlayers = [];
     this.players.forEach(p => {
       p.isFinished = false;
@@ -258,7 +407,7 @@ class MultiplayerManager {
     });
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'START_GAME',
-      mode: mode // 'minigame' hoặc 'quiz'
+      mode: mode || 'minigame'
     });
   }
 
@@ -296,7 +445,6 @@ class MultiplayerManager {
 
   // Trả về danh sách xếp hạng của phòng hiện tại
   getRoomLeaderboard() {
-    // Kết hợp tất cả người chơi trong phòng
     const list = this.players.map(p => {
       const fin = this.finishedPlayers.find(f => f.id === p.id);
       return {
@@ -310,7 +458,6 @@ class MultiplayerManager {
       };
     });
 
-    // Sắp xếp: Ai đã hoàn thành xếp trước (theo điểm DESC, thời gian ASC), sau đó là người chưa hoàn thành (theo điểm DESC)
     list.sort((a, b) => {
       if (a.isFinished && !b.isFinished) return -1;
       if (!a.isFinished && b.isFinished) return 1;
@@ -338,6 +485,7 @@ class MultiplayerManager {
 
   // Rời phòng
   leaveRoom() {
+    this.stopHeartbeat();
     if (this.isConnected) {
       this.publishMessage(`vnr202_game/${this.roomId}/events`, {
         type: 'PLAYER_LEAVE',
@@ -365,7 +513,7 @@ class MultiplayerManager {
     const gridEl = document.getElementById('lobby-players-grid');
     if (gridEl) {
       gridEl.innerHTML = '';
-      this.players.forEach((p, idx) => {
+      this.players.forEach((p) => {
         const item = document.createElement('div');
         item.className = 'player-card animate-appear';
         if (p.id === this.playerId) item.classList.add('is-me');
@@ -385,7 +533,7 @@ class MultiplayerManager {
       });
     }
 
-    // Khung mã QR: Luôn hiển thị ở sảnh chờ cho cả Chủ tọa và Đại biểu để mọi người có thể quét tham gia
+    // Khung mã QR: Luôn hiển thị ở sảnh chờ để mọi người có thể quét tham gia
     const hostQrBox = document.getElementById('lobby-host-qr-box');
     const clientWaitBox = document.getElementById('lobby-client-wait-box');
     const hostActions = document.getElementById('lobby-host-actions');
@@ -393,13 +541,14 @@ class MultiplayerManager {
     if (hostQrBox) hostQrBox.style.display = 'flex';
 
     if (this.isHost) {
+      // Nếu là Chủ tọa -> Hiện nút bắt đầu tranh tài, ẩn khung chờ
       if (clientWaitBox) clientWaitBox.style.display = 'none';
       if (hostActions) hostActions.style.display = 'flex';
     } else {
+      // Nếu là Đại biểu khách -> Hiện khung chờ thông báo sẵn sàng, ẩn nút phát lệnh
       if (clientWaitBox) clientWaitBox.style.display = 'flex';
       if (hostActions) hostActions.style.display = 'none';
 
-      // Cập nhật tên của mình trên thẻ chờ của Client
       const myAvatarEl = document.getElementById('client-my-avatar');
       const myNameEl = document.getElementById('client-my-name');
       if (myAvatarEl) myAvatarEl.innerText = this.playerAvatar;

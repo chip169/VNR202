@@ -302,9 +302,7 @@ class HistoricalQuizApp {
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
         soundEngine.playClick();
-        if (this.multiplayer.isHost) {
-          this.multiplayer.broadcastStartGame('minigame');
-        }
+        this.multiplayer.broadcastStartGame('minigame');
         this.miniGame.startTimelineGame();
       });
     }
@@ -314,9 +312,9 @@ class HistoricalQuizApp {
     if (tlBack) {
       tlBack.addEventListener('click', () => {
         soundEngine.playClick();
-        if (this.miniGames) {
-          this.miniGames.clearSpeedTimer();
-          this.miniGames.stopStopwatch();
+        if (this.miniGame) {
+          this.miniGame.clearSpeedTimer();
+          this.miniGame.stopStopwatch();
         }
         this.switchScreen('start-screen');
       });
@@ -325,8 +323,8 @@ class HistoricalQuizApp {
     if (cpBack) {
       cpBack.addEventListener('click', () => {
         soundEngine.playClick();
-        if (this.miniGames) {
-          this.miniGames.stopStopwatch();
+        if (this.miniGame) {
+          this.miniGame.stopStopwatch();
         }
         this.switchScreen('start-screen');
       });
