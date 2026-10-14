@@ -301,6 +301,10 @@ class HistoricalQuizApp {
     const startBattleBtn = document.getElementById('btn-start-lobby-game');
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
+        if (!this.multiplayer.isHost) {
+          alert('Chỉ có Chủ tọa (máy tạo phòng) mới có quyền phát lệnh bắt đầu trò chơi!');
+          return;
+        }
         soundEngine.playClick();
         this.multiplayer.broadcastStartGame('minigame');
         this.miniGame.startTimelineGame();

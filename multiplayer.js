@@ -323,7 +323,17 @@ class MultiplayerManager {
 
         // Lệnh bắt đầu trò chơi từ Chủ tọa
         case 'START_GAME': {
-          console.log('Nhận lệnh bắt đầu game từ Chủ tọa');
+          // Bỏ qua nếu là chính máy mình vừa phát đi lệnh (vì Host đã tự kích hoạt bắt đầu)
+          if (data.senderId === this.playerId) break;
+
+          // Kiểm tra xác thực lệnh bắt đầu phải từ Chủ tọa
+          const currentHost = this.players.find(p => p.isHost);
+          if (currentHost && data.senderId && data.senderId !== currentHost.id) {
+            console.warn('Từ chối lệnh START_GAME vì người phát không phải Chủ tọa hợp lệ');
+            break;
+          }
+
+          console.log('✅ Nhận lệnh bắt đầu game từ Chủ tọa:', data.senderId);
           soundEngine.playFanfare();
           this.finishedPlayers = [];
           this.players.forEach(p => {
@@ -396,8 +406,12 @@ class MultiplayerManager {
     });
   }
 
-  // Bắt đầu game cho tất cả các máy trong phòng
+  // Bắt đầu game cho tất cả các máy trong phòng (Chỉ Chủ tọa mới có quyền phát lệnh)
   broadcastStartGame(mode) {
+    if (!this.isHost) {
+      console.warn('Từ chối phát lệnh vì chỉ có Chủ tọa mới có quyền bắt đầu trò chơi!');
+      return;
+    }
     this.finishedPlayers = [];
     this.players.forEach(p => {
       p.isFinished = false;
@@ -407,6 +421,7 @@ class MultiplayerManager {
     });
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'START_GAME',
+      senderId: this.playerId,
       mode: mode || 'minigame'
     });
   }
