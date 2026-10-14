@@ -80,13 +80,17 @@ class MultiplayerManager {
       { id: this.playerId, name: this.playerName, avatar: this.playerAvatar, score: 0, isHost: true }
     ];
 
+    // Cập nhật giao diện và render mã QR ngay tức thì (không đợi kết nối MQTT)
+    this.updateLobbyUI();
+    this.renderQRCode();
+
     this.connect(() => {
       // Đăng ký nhận tin nhắn của phòng
       const topic = `vnr202_game/${this.roomId}/#`;
       this.client.subscribe(topic, { qos: 1 });
       console.log('Đã đăng ký topic Host:', topic);
 
-      // Cập nhật giao diện Sảnh Chờ
+      // Cập nhật lại giao diện và đồng bộ danh sách
       this.updateLobbyUI();
       this.renderQRCode();
       this.broadcastRoster();
@@ -99,6 +103,10 @@ class MultiplayerManager {
     this.roomId = (roomId || '1930-VN').trim().toUpperCase();
     this.playerName = (playerName || 'Đại biểu Khách').trim();
     this.playerAvatar = playerAvatar || '⭐';
+
+    // Cập nhật giao diện và mã QR ngay tức thì
+    this.updateLobbyUI();
+    this.renderQRCode();
 
     this.connect(() => {
       const topic = `vnr202_game/${this.roomId}/#`;
@@ -377,18 +385,17 @@ class MultiplayerManager {
       });
     }
 
-    // Nếu là Host: Hiện khung mã QR, hiện các nút bắt đầu
-    // Nếu là Client: Ẩn khung mã QR, hiện thông báo chờ chủ tọa, ẩn các nút bắt đầu
+    // Khung mã QR: Luôn hiển thị ở sảnh chờ cho cả Chủ tọa và Đại biểu để mọi người có thể quét tham gia
     const hostQrBox = document.getElementById('lobby-host-qr-box');
     const clientWaitBox = document.getElementById('lobby-client-wait-box');
     const hostActions = document.getElementById('lobby-host-actions');
 
+    if (hostQrBox) hostQrBox.style.display = 'flex';
+
     if (this.isHost) {
-      if (hostQrBox) hostQrBox.style.display = 'flex';
       if (clientWaitBox) clientWaitBox.style.display = 'none';
       if (hostActions) hostActions.style.display = 'flex';
     } else {
-      if (hostQrBox) hostQrBox.style.display = 'none';
       if (clientWaitBox) clientWaitBox.style.display = 'flex';
       if (hostActions) hostActions.style.display = 'none';
 
@@ -419,35 +426,45 @@ class MultiplayerManager {
 
     qrContainer.innerHTML = '';
 
-    // Dùng ảnh QR code độ nét cao tạo động, hiển thị sắc nét trên mọi điện thoại & Safari
-    const qrImg = document.createElement('img');
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(joinUrl)}&bgcolor=f6c85f&color=0a0504&margin=2`;
-    qrImg.alt = "Mã QR Tham Gia Hội Nghị";
-    qrImg.style.width = "100%";
-    qrImg.style.height = "100%";
-    qrImg.style.objectFit = "contain";
-    qrImg.style.borderRadius = "8px";
-    qrImg.style.display = "block";
+    // Thử vẽ QR Code bằng thư viện QRCodeJS cục bộ trước (tức thì 0ms, không phụ thuộc mạng)
+    let localRenderSuccess = false;
+    if (typeof QRCode !== 'undefined') {
+      try {
+        new QRCode(qrContainer, {
+          text: joinUrl,
+          width: 154,
+          height: 154,
+          colorDark: '#0a0504',
+          colorLight: '#f6c85f',
+          correctLevel: QRCode.CorrectLevel.L
+        });
+        localRenderSuccess = true;
+      } catch (err) {
+        console.warn('QRCodeJS local error, using API fallback:', err);
+      }
+    }
 
-    qrImg.onerror = () => {
-      // Dự phòng bằng thư viện QRCodeJS cục bộ với error correction L nếu không có kết nối internet
-      if (typeof QRCode !== 'undefined') {
-        qrContainer.innerHTML = '';
-        try {
-          new QRCode(qrContainer, {
-            text: joinUrl,
-            width: 170,
-            height: 170,
-            colorDark: '#0a0504',
-            colorLight: '#f6c85f',
-            correctLevel: QRCode.CorrectLevel.L
-          });
-        } catch (e) {
-          console.error('QR Render fallback error:', e);
-        }
+    // Nếu chưa có canvas/img cục bộ -> tạo ảnh QR API sắc nét
+    if (!localRenderSuccess || !qrContainer.querySelector('canvas, img')) {
+      qrContainer.innerHTML = '';
+      const qrImg = document.createElement('img');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(joinUrl)}&bgcolor=f6c85f&color=0a0504&margin=2`;
+      qrImg.alt = "Mã QR Tham Gia Hội Nghị";
+      qrImg.style.width = "100%";
+      qrImg.style.height = "100%";
+      qrImg.style.objectFit = "contain";
+      qrImg.style.borderRadius = "8px";
+      qrImg.style.display = "block";
+      qrContainer.appendChild(qrImg);
+    }
+
+    // Nhấp vào mã QR hoặc liên kết để sao chép link tham gia nhanh chóng
+    qrContainer.onclick = () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(joinUrl).then(() => {
+          alert('✅ Đã sao chép liên kết vào phòng:\n' + joinUrl);
+        }).catch(() => {});
       }
     };
-
-    qrContainer.appendChild(qrImg);
   }
 }
