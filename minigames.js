@@ -181,16 +181,24 @@ class MiniGameEngine {
     if (this.selectedCardId === cardId) {
       this.selectedCardId = null;
       cardEl.classList.remove('selected');
+      document.querySelectorAll('.timeline-slot-dropzone').forEach(s => s.classList.remove('pulse-target'));
       return;
     }
 
     document.querySelectorAll('.timeline-event-card').forEach(c => c.classList.remove('selected'));
     this.selectedCardId = cardId;
     cardEl.classList.add('selected');
+    // Làm sáng các mốc năm trên trục thời gian để người chơi trên điện thoại chạm ngay
+    document.querySelectorAll('.timeline-slot-dropzone:not(.completed)').forEach(s => s.classList.add('pulse-target'));
   }
 
   handleSlotClick(year, slotBox) {
-    if (!this.selectedCardId) return;
+    if (!this.selectedCardId) {
+      // Nếu chạm mốc năm trước khi chọn thẻ -> Rung nhẹ nhắc nhở
+      slotBox.classList.add('slot-hint-pulse');
+      setTimeout(() => slotBox.classList.remove('slot-hint-pulse'), 500);
+      return;
+    }
     this.verifyAndDropCard(this.selectedCardId, year, slotBox);
   }
 
@@ -208,6 +216,7 @@ class MiniGameEngine {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
 
+      document.querySelectorAll('.timeline-slot-dropzone').forEach(s => s.classList.remove('pulse-target'));
       const targetDropZone = slotBox.querySelector('.slot-drop-target');
       targetDropZone.innerHTML = '';
       cardEl.classList.remove('selected');
@@ -249,8 +258,95 @@ class MiniGameEngine {
     this.selectedHero = null;
     this.selectedEvent = null;
     this.selectedLocale = null;
+    this.activeCipherTab = 'heroes';
     this.app.switchScreen('cipher-game-screen');
+    this.initCipherTabs();
     this.renderCipherColumns();
+  }
+
+  initCipherTabs() {
+    const tabBtns = document.querySelectorAll('.cipher-tab-btn');
+    tabBtns.forEach(btn => {
+      btn.onclick = () => {
+        soundEngine.playClick();
+        const tab = btn.dataset.tab;
+        this.switchCipherTab(tab);
+      };
+    });
+  }
+
+  switchCipherTab(tabName) {
+    this.activeCipherTab = tabName;
+    document.querySelectorAll('.cipher-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tabName);
+    });
+
+    const colMap = {
+      heroes: 'col-card-heroes',
+      events: 'col-card-events',
+      locales: 'col-card-locales'
+    };
+
+    ['heroes', 'events', 'locales'].forEach(t => {
+      const el = document.getElementById(colMap[t]);
+      if (el) {
+        if (t === tabName) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      }
+    });
+  }
+
+  updateCipherMatchBar() {
+    const valHero = document.getElementById('match-val-hero');
+    const chipHero = document.getElementById('match-chip-hero');
+    const dotHero = document.getElementById('tab-dot-heroes');
+
+    const valEvent = document.getElementById('match-val-event');
+    const chipEvent = document.getElementById('match-chip-event');
+    const dotEvent = document.getElementById('tab-dot-events');
+
+    const valLocale = document.getElementById('match-val-locale');
+    const chipLocale = document.getElementById('match-chip-locale');
+    const dotLocale = document.getElementById('tab-dot-locales');
+
+    // Hero
+    if (this.selectedHero) {
+      const rep = CIPHER_REPORTS.find(r => r.id === this.selectedHero);
+      if (valHero) valHero.innerText = rep ? rep.hero.name : 'Đã chọn';
+      if (chipHero) chipHero.classList.add('has-val');
+      if (dotHero) dotHero.classList.add('active');
+    } else {
+      if (valHero) valHero.innerText = 'Chưa chọn';
+      if (chipHero) chipHero.classList.remove('has-val');
+      if (dotHero) dotHero.classList.remove('active');
+    }
+
+    // Event
+    if (this.selectedEvent) {
+      const rep = CIPHER_REPORTS.find(r => r.id === this.selectedEvent);
+      if (valEvent) valEvent.innerText = rep ? rep.event.name : 'Đã chọn';
+      if (chipEvent) chipEvent.classList.add('has-val');
+      if (dotEvent) dotEvent.classList.add('active');
+    } else {
+      if (valEvent) valEvent.innerText = 'Chưa chọn';
+      if (chipEvent) chipEvent.classList.remove('has-val');
+      if (dotEvent) dotEvent.classList.remove('active');
+    }
+
+    // Locale
+    if (this.selectedLocale) {
+      const rep = CIPHER_REPORTS.find(r => r.id === this.selectedLocale);
+      if (valLocale) valLocale.innerText = rep ? rep.locale.name : 'Đã chọn';
+      if (chipLocale) chipLocale.classList.add('has-val');
+      if (dotLocale) dotLocale.classList.add('active');
+    } else {
+      if (valLocale) valLocale.innerText = 'Chưa chọn';
+      if (chipLocale) chipLocale.classList.remove('has-val');
+      if (dotLocale) dotLocale.classList.remove('active');
+    }
   }
 
   renderCipherColumns() {
@@ -263,6 +359,12 @@ class MiniGameEngine {
     eventsCol.innerHTML = '';
     localesCol.innerHTML = '';
     feedEl.innerHTML = '';
+
+    this.selectedHero = null;
+    this.selectedEvent = null;
+    this.selectedLocale = null;
+    this.updateCipherMatchBar();
+    this.switchCipherTab('heroes');
 
     // Lấy các thẻ chưa giải mã
     const activeData = CIPHER_REPORTS.filter(r => !this.decodedReports.includes(r.id));
@@ -334,16 +436,26 @@ class MiniGameEngine {
     if (type === 'hero') {
       document.querySelectorAll('#cipher-col-heroes .cipher-card-item').forEach(c => c.classList.remove('selected'));
       this.selectedHero = this.selectedHero === repId ? null : repId;
-      if (this.selectedHero) el.classList.add('selected');
+      if (this.selectedHero) {
+        el.classList.add('selected');
+        // Tự động chuyển tab tiếp theo trên mobile để người chơi không phải cuộn trang
+        setTimeout(() => this.switchCipherTab('events'), 220);
+      }
     } else if (type === 'event') {
       document.querySelectorAll('#cipher-col-events .cipher-card-item').forEach(c => c.classList.remove('selected'));
       this.selectedEvent = this.selectedEvent === repId ? null : repId;
-      if (this.selectedEvent) el.classList.add('selected');
+      if (this.selectedEvent) {
+        el.classList.add('selected');
+        // Tự động chuyển tab địa bàn tiếp theo trên mobile
+        setTimeout(() => this.switchCipherTab('locales'), 220);
+      }
     } else if (type === 'locale') {
       document.querySelectorAll('#cipher-col-locales .cipher-card-item').forEach(c => c.classList.remove('selected'));
       this.selectedLocale = this.selectedLocale === repId ? null : repId;
       if (this.selectedLocale) el.classList.add('selected');
     }
+
+    this.updateCipherMatchBar();
 
     // Khi người chơi đã chọn cả 3 cột -> Kiểm tra khớp logic
     if (this.selectedHero && this.selectedEvent && this.selectedLocale) {
@@ -352,6 +464,8 @@ class MiniGameEngine {
   }
 
   verifyTriadMatch() {
+    const matchBar = document.getElementById('cipher-match-bar');
+
     if (this.selectedHero === this.selectedEvent && this.selectedEvent === this.selectedLocale) {
       // Khớp chính xác bức điện mật!
       const matchedRepId = this.selectedHero;
@@ -362,6 +476,8 @@ class MiniGameEngine {
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
+
+      if (matchBar) matchBar.classList.add('matched-success');
 
       // Highlight các thẻ đúng
       document.querySelectorAll(`[data-rep-id="${matchedRepId}"]`).forEach(el => {
@@ -378,24 +494,26 @@ class MiniGameEngine {
       `;
       feedEl.prepend(badge);
 
-      this.selectedHero = null;
-      this.selectedEvent = null;
-      this.selectedLocale = null;
-
       setTimeout(() => {
+        if (matchBar) matchBar.classList.remove('matched-success');
         this.renderCipherColumns();
       }, 1200);
     } else {
       // Không khớp logic -> Rung lắc và đặt lại
       soundEngine.playWrong();
+      if (matchBar) matchBar.classList.add('error-shake');
       const selectedEls = document.querySelectorAll('.cipher-card-item.selected');
       selectedEls.forEach(el => el.classList.add('error-shake'));
+
       setTimeout(() => {
+        if (matchBar) matchBar.classList.remove('error-shake');
         selectedEls.forEach(el => el.classList.remove('error-shake', 'selected'));
         this.selectedHero = null;
         this.selectedEvent = null;
         this.selectedLocale = null;
-      }, 500);
+        this.updateCipherMatchBar();
+        this.switchCipherTab('heroes');
+      }, 600);
     }
   }
 

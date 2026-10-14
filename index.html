@@ -265,10 +265,44 @@
           <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện]</em> + <em>[Địa Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long!</span>
         </div>
 
+        <!-- Thanh trạng thái bộ ba đang chọn (Tối ưu cho Mobile & Desktop) -->
+        <div class="cipher-match-bar" id="cipher-match-bar">
+          <div class="match-chip" id="match-chip-hero">
+            <span class="chip-label">👤 Nhân Vật:</span>
+            <strong class="chip-val" id="match-val-hero">Chưa chọn</strong>
+          </div>
+          <span class="match-plus">+</span>
+          <div class="match-chip" id="match-chip-event">
+            <span class="chip-label">⚡ Sự Kiện:</span>
+            <strong class="chip-val" id="match-val-event">Chưa chọn</strong>
+          </div>
+          <span class="match-plus">+</span>
+          <div class="match-chip" id="match-chip-locale">
+            <span class="chip-label">📍 Địa Bàn:</span>
+            <strong class="chip-val" id="match-val-locale">Chưa chọn</strong>
+          </div>
+        </div>
+
+        <!-- 3 Tab chuyển đổi nhanh trên Mobile -->
+        <div class="cipher-mobile-tabs" id="cipher-mobile-tabs">
+          <button type="button" class="cipher-tab-btn active" data-tab="heroes" id="tab-btn-heroes">
+            <span>👤 1. Nhân Vật</span>
+            <span class="tab-check-dot" id="tab-dot-heroes"></span>
+          </button>
+          <button type="button" class="cipher-tab-btn" data-tab="events" id="tab-btn-events">
+            <span>⚡ 2. Sự Kiện</span>
+            <span class="tab-check-dot" id="tab-dot-events"></span>
+          </button>
+          <button type="button" class="cipher-tab-btn" data-tab="locales" id="tab-btn-locales">
+            <span>📍 3. Địa Bàn</span>
+            <span class="tab-check-dot" id="tab-dot-locales"></span>
+          </button>
+        </div>
+
         <!-- 3 Cột Ghép Nối -->
         <div class="cipher-columns-grid">
           <!-- Cột 1: Nhân Vật -->
-          <div class="cipher-col-card">
+          <div class="cipher-col-card active" id="col-card-heroes">
             <div class="cipher-col-header">
               <span class="col-icon">👤</span>
               <h4>1. NHÂN VẬT LỊCH SỬ</h4>
@@ -277,7 +311,7 @@
           </div>
 
           <!-- Cột 2: Tác Phẩm / Sự Kiện -->
-          <div class="cipher-col-card">
+          <div class="cipher-col-card" id="col-card-events">
             <div class="cipher-col-header">
               <span class="col-icon">⚡</span>
               <h4>2. TÁC PHẨM / SỰ KIỆN</h4>
@@ -286,7 +320,7 @@
           </div>
 
           <!-- Cột 3: Địa Bàn / Mốc Thời Gian -->
-          <div class="cipher-col-card">
+          <div class="cipher-col-card" id="col-card-locales">
             <div class="cipher-col-header">
               <span class="col-icon">📍</span>
               <h4>3. ĐỊA BÀN HOẠT ĐỘNG</h4>
