@@ -273,17 +273,17 @@
       <div id="stage-transition-overlay" class="stage-transition-overlay" style="display: none;">
         <div class="stage-transition-card animate-appear">
           <div class="stage-trans-icon">🎉</div>
-          <div class="stage-trans-badge">XUẤT SẮC HOÀN THÀNH CHẶNG 1</div>
-          <h3 class="stage-trans-title">TIẾN VÀO CHẶNG 2:<br>GIẢI MÃ ĐIỆN TÍN CỬU LONG</h3>
+          <div class="stage-trans-badge">XUẤT SẮC HOÀN THÀNH 5 PHÚT CHẶNG 1</div>
+          <h3 class="stage-trans-title">TIẾN VÀO CHẶNG 2:<br>GHÉP MỐC NĂM & NỐI SỰ KIỆN</h3>
           <div class="stage-trans-score">
             <span>ĐIỂM CHẶNG 1:</span>
             <strong id="trans-stage1-score">0đ</strong>
           </div>
           <p class="stage-trans-desc">
-            📻 Ghép đúng <strong>5 bộ ba lịch sử</strong>: [Nhân Vật] + [Tác Phẩm / Sự Kiện] + [Địa Bàn] để gửi điện tín về Hội nghị 1930. Thưởng <strong>+250 điểm</strong> mỗi bức điện!
+            📻 Ghép đúng <strong>5 bộ ba lịch sử</strong>: [Nhân Vật] + [Sự Kiện] + [Mốc Năm & Địa Bàn] gửi về Hội nghị Cửu Long 1930. Thưởng <strong>+250 điểm</strong> mỗi bức điện!
           </p>
           <button type="button" class="btn-trans-start" id="btn-trans-continue">
-            <span>BẮT ĐẦU CHẶNG 2 NGAY (3s)</span> ➔
+            <span>VÀO CHẶNG 2: GHÉP NĂM & NỐI SỰ KIỆN (3s)</span> ➔
           </button>
         </div>
       </div>
@@ -334,7 +334,7 @@
           <div class="speed-timer-info">
             <span class="speed-timer-label">⏳ THỜI GIAN TRẢ LỜI:</span>
             <strong class="speed-timer-num" id="speed-countdown-num">12s</strong>
-            <span class="speed-step-indicator" id="speed-step-indicator">Câu 1/10 (Chặng 1) • Chuỗi: 0</span>
+            <span class="speed-step-indicator" id="speed-step-indicator">Câu 1 • Chuỗi: 0</span>
           </div>
           <div class="speed-progress-track">
             <div class="speed-progress-fill" id="speed-progress-fill"></div>
@@ -347,16 +347,16 @@
         <div class="speed-event-card" id="speed-event-card">
           <div class="speed-card-glow"></div>
           <div class="speed-card-header">
-            <span class="speed-card-badge" id="speed-card-badge">📜 SỰ KIỆN LỊCH SỬ</span>
-            <span class="speed-card-icon" id="speed-card-icon">🚢</span>
+            <span class="speed-card-badge" id="speed-card-badge">📜 TRI THỨC LỊCH SỬ ĐẢNG 1930</span>
+            <span class="speed-card-icon" id="speed-card-icon">⭐</span>
           </div>
-          <h4 class="speed-event-title" id="speed-event-title">Khởi đầu hành trình bôn ba ba đại dương</h4>
+          <h4 class="speed-event-title" id="speed-event-title">Câu hỏi lịch sử...</h4>
         </div>
 
-        <!-- Lưới Nút Lựa Chọn (Tự động hiển thị các Năm hoặc 4 Phương Án A-B-C-D) -->
+        <!-- Lưới Nút Lựa Chọn (4 Phương Án A-B-C-D) -->
         <div class="speed-years-section" id="speed-options-section">
-          <div class="speed-years-prompt" id="speed-options-prompt">👇 CHẠM NHANH VÀO ĐÁP ÁN ĐÚNG:</div>
-          <div class="speed-years-grid" id="speed-years-grid">
+          <div class="speed-years-prompt" id="speed-options-prompt">👇 CHẠM NHANH VÀO ĐÁP ÁN ĐÚNG (A, B, C, D):</div>
+          <div class="speed-years-grid quiz-options-mode" id="speed-years-grid">
             <!-- Sinh tự động các nút từ minigames.js -->
           </div>
         </div>
@@ -372,8 +372,8 @@
             <div class="minigame-title-badge">
               <span class="badge-icon">📻</span>
               <div>
-                <div class="badge-sub">CHẶNG 2: GIẢI MÃ ĐIỆN TÍN HỘI NGHỊ CỬU LONG</div>
-                <h3 class="badge-main-title">Ghép Bộ Ba: Nhân Vật ➜ Tác Phẩm/Sự Kiện ➜ Địa Bàn</h3>
+                <div class="badge-sub">CHẶNG 2: GHÉP MỐC NĂM & NỐI SỰ KIỆN LỊCH SỬ (1911 - 1930)</div>
+                <h3 class="badge-main-title">Ghép Bộ Ba: Nhân Vật ➜ Tác Phẩm / Sự Kiện ➜ Mốc Năm & Địa Bàn</h3>
               </div>
             </div>
             <button class="btn-minigame-exit" id="btn-cipher-back" title="Về Màn Hình Chính">✖ Rời Game</button>
@@ -393,8 +393,7 @@
 
         <!-- Hướng dẫn cách chơi -->
         <div class="minigame-instruction-bar">
-          <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện]</em> + <em>[Địa
-              Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long!</span>
+          <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện / Tác Phẩm]</em> + <em>[Mốc Năm & Địa Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long 1930!</span>
         </div>
 
         <!-- Thanh trạng thái bộ ba đang chọn (Tối ưu cho Mobile & Desktop) -->
@@ -410,7 +409,7 @@
           </div>
           <span class="match-plus">+</span>
           <div class="match-chip" id="match-chip-locale">
-            <span class="chip-label">📍 Địa Bàn:</span>
+            <span class="chip-label">📅 Mốc Năm:</span>
             <strong class="chip-val" id="match-val-locale">Chưa chọn</strong>
           </div>
         </div>
@@ -426,7 +425,7 @@
             <span class="tab-check-dot" id="tab-dot-events"></span>
           </button>
           <button type="button" class="cipher-tab-btn" data-tab="locales" id="tab-btn-locales">
-            <span>📍 3. Địa Bàn</span>
+            <span>📅 3. Mốc Năm</span>
             <span class="tab-check-dot" id="tab-dot-locales"></span>
           </button>
         </div>
@@ -451,11 +450,11 @@
             <div class="cipher-cards-list" id="cipher-col-events"></div>
           </div>
 
-          <!-- Cột 3: Địa Bàn / Mốc Thời Gian -->
+          <!-- Cột 3: Mốc Năm & Địa Bàn -->
           <div class="cipher-col-card" id="col-card-locales">
             <div class="cipher-col-header">
-              <span class="col-icon">📍</span>
-              <h4>3. ĐỊA BÀN HOẠT ĐỘNG</h4>
+              <span class="col-icon">📅</span>
+              <h4>3. MỐC NĂM & ĐỊA BÀN</h4>
             </div>
             <div class="cipher-cards-list" id="cipher-col-locales"></div>
           </div>

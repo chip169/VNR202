@@ -92,35 +92,35 @@ const CIPHER_REPORTS = [
     id: "rep-1",
     hero: { id: "h1", name: "Nguyễn Ái Quốc", role: "Lãnh tụ Cách mạng", icon: "⭐" },
     event: { id: "e1", name: "Đường Kách mệnh", desc: "Tác phẩm lý luận cách mạng vô sản đầu tiên", icon: "📖" },
-    locale: { id: "l1", name: "Quảng Châu (1927)", desc: "Địa bàn đào tạo lớp cán bộ cốt cán", icon: "📍" },
+    locale: { id: "l1", name: "Năm 1927 - Quảng Châu", desc: "Địa bàn huấn luyện chính trị (1927)", icon: "📅" },
     summary: "Năm 1927 tại Quảng Châu, đồng chí Nguyễn Ái Quốc xuất bản 'Đường Kách mệnh', trang bị thế giới quan Mác - Lênin cho phong trào cách mạng Việt Nam."
   },
   {
     id: "rep-2",
     hero: { id: "h2", name: "Nguyễn Tất Thành", role: "Văn Ba (Phụ bếp)", icon: "🚢" },
     event: { id: "e2", name: "Tàu Latouche-Tréville", desc: "Chuyến hải trình vượt ba đại dương", icon: "🌊" },
-    locale: { id: "l2", name: "Bến Nhà Rồng (1911)", desc: "Khởi đầu con đường cứu nước", icon: "📍" },
+    locale: { id: "l2", name: "Năm 1911 - Bến Nhà Rồng", desc: "Khởi đầu con đường cứu nước (1911)", icon: "📅" },
     summary: "Ngày 5/6/1911 từ Bến cảng Nhà Rồng, người thanh niên yêu nước Nguyễn Tất Thành bước lên tàu Đô đốc Latouche-Tréville ra đi tìm đường giải phóng dân tộc."
   },
   {
     id: "rep-3",
     hero: { id: "h3", name: "Phạm Hồng Thái", role: "Chiến sĩ Tâm Tâm Xã", icon: "💣" },
     event: { id: "e3", name: "Tiếng bom Sa Diện", desc: "Mưu sát Toàn quyền Merlin, tuẫn tiết sông Châu Giang", icon: "⚡" },
-    locale: { id: "l3", name: "Khách sạn Victoria (1924)", desc: "Tô giới Sa Diện - Quảng Châu", icon: "📍" },
+    locale: { id: "l3", name: "Năm 1924 - Sa Diện (Quảng Châu)", desc: "Khách sạn Victoria Sa Diện (1924)", icon: "📅" },
     summary: "Tháng 6/1924, người anh hùng Phạm Hồng Thái ném bom Sa Diện mưu sát Toàn quyền Merlin, hy sinh anh dũng và báo hiệu mùa xuân cách mạng."
   },
   {
     id: "rep-4",
     hero: { id: "h4", name: "Trần Phú", role: "Tổng Bí thư đầu tiên", icon: "📜" },
     event: { id: "e4", name: "Luận cương chính trị tháng 10", desc: "Xác định đường lối cách mạng tư sản dân quyền", icon: "🖋️" },
-    locale: { id: "l4", name: "Hương Cảng (10/1930)", desc: "Hội nghị BCH Trung ương lâm thời", icon: "📍" },
+    locale: { id: "l4", name: "Năm 1930 - Hương Cảng", desc: "Hội nghị BCH Trung ương lâm thời (10/1930)", icon: "📅" },
     summary: "Tháng 10/1930 tại Hương Cảng, đồng chí Trần Phú chủ trì Hội nghị Trung ương, thông qua Luận cương chính trị và được bầu làm Tổng Bí thư đầu tiên."
   },
   {
     id: "rep-5",
     hero: { id: "h5", name: "Nguyễn Đức Cảnh", role: "Bí thư Xứ ủy Bắc Kỳ", icon: "⚒️" },
     event: { id: "e5", name: "Chủ trương 'Vô sản hóa'", desc: "Cùng ăn, cùng ở, cùng lao động với thợ thuyền", icon: "🔥" },
-    locale: { id: "l5", name: "Mỏ than Hòn Gai - Hải Phòng (1928)", desc: "Trung tâm công nghiệp than & cảng biển", icon: "📍" },
+    locale: { id: "l5", name: "Năm 1928 - Mỏ than Hòn Gai", desc: "Trung tâm mỏ than & xí nghiệp Hải Phòng (1928)", icon: "📅" },
     summary: "Năm 1928, đồng chí Nguyễn Đức Cảnh chỉ đạo đưa cán bộ vào các mỏ than Hòn Gai và xí nghiệp Hải Phòng, rèn luyện lập trường giai cấp công nhân."
   }
 ];
@@ -203,30 +203,11 @@ class MiniGameEngine {
     this.refillQuestionQueue();
   }
 
-  // Bổ sung và xáo trộn câu hỏi từ ngân hàng 100 câu & timeline
+  // Bổ sung và xáo trộn câu hỏi từ ngân hàng 100 câu trắc nghiệm A - B - C - D vô hạn
   refillQuestionQueue() {
     const pool = [];
 
-    // 1. Thêm các sự kiện Dòng thời gian mốc năm (Timeline Year Events)
-    if (typeof SPEED_TIMELINE_STAGES !== 'undefined') {
-      SPEED_TIMELINE_STAGES.forEach(stage => {
-        stage.events.forEach(ev => {
-          pool.push({
-            type: 'timeline',
-            id: ev.id || `ev-${ev.year}`,
-            badge: '📜 DÒNG THỜI GIAN LỊCH SỬ',
-            icon: ev.icon || '⏳',
-            title: ev.title,
-            desc: ev.desc,
-            hint: ev.hint || '',
-            correctYear: ev.year,
-            yearOptions: stage.yearOptions || ["1911", "1917", "1920", "1924", "1925", "1927", "1928", "1929", "1930"]
-          });
-        });
-      });
-    }
-
-    // 2. Thêm toàn bộ các câu hỏi trắc nghiệm lịch sử Đảng phong phú từ questions.js
+    // Chặng 1 giữ nguyên CHỈ toàn bộ các câu hỏi trắc nghiệm A, B, C, D từ questions.js
     if (typeof HISTORICAL_QUESTIONS !== 'undefined' && Array.isArray(HISTORICAL_QUESTIONS)) {
       HISTORICAL_QUESTIONS.forEach(q => {
         pool.push({
@@ -366,7 +347,7 @@ class MiniGameEngine {
     }
 
     if (stepEl) {
-      stepEl.innerText = `Câu ${this.questionIndex}/10 (Chặng 1) • Chuỗi: ${this.streakCount}`;
+      stepEl.innerText = `Câu ${this.questionIndex} • Chuỗi: ${this.streakCount}`;
     }
 
     // Cập nhật Danh hiệu đại biểu theo điểm số
@@ -533,17 +514,13 @@ class MiniGameEngine {
 
       this.updateHUD();
 
-      // Chuyển câu tiếp theo sau 0.75 giây
+      // Chuyển câu tiếp theo sau 0.75 giây (Chế độ vô hạn cho đủ 5 phút)
       setTimeout(() => {
         document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
           b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
           if (typeof b.blur === 'function') b.blur();
         });
-        if (this.questionIndex >= 10) {
-          this.transitionToCipherStage();
-        } else {
-          this.loadNextQuestion();
-        }
+        this.loadNextQuestion();
       }, 750);
     } else {
       // TRẢ LỜI SAI -> KÍCH HOẠT HÌNH PHẠT ĐÓNG BĂNG 3S (ANTI-SPAM)
@@ -587,12 +564,8 @@ class MiniGameEngine {
           b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
           if (typeof b.blur === 'function') b.blur();
         });
-        // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới hoặc Chặng 2
-        if (this.questionIndex >= 10) {
-          this.transitionToCipherStage();
-        } else {
-          this.loadNextQuestion();
-        }
+        // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới vô hạn
+        this.loadNextQuestion();
       }
     }, 1000);
   }
@@ -624,15 +597,11 @@ class MiniGameEngine {
         b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
         if (typeof b.blur === 'function') b.blur();
       });
-      if (this.questionIndex >= 10) {
-        this.transitionToCipherStage();
-      } else {
-        this.loadNextQuestion();
-      }
+      this.loadNextQuestion();
     }, 1200);
   }
 
-  // Chuyển đổi giữa 2 chặng: Chặng 1 (Tri Thức Siêu Tốc) -> Chặng 2 (Giải Mã Điện Tín Cửu Long)
+  // Chuyển đổi giữa 2 chặng: Chặng 1 (Trắc nghiệm A-B-C-D 5 phút) -> Chặng 2 (Ghép năm & Nối sự kiện)
   transitionToCipherStage() {
     this.clearSpeedTimer();
     clearInterval(this.freezeTimer);
@@ -650,7 +619,7 @@ class MiniGameEngine {
 
     let secLeft = 3;
     if (btnContinue) {
-      btnContinue.innerHTML = `<span>BẮT ĐẦU CHẶNG 2 NGAY (${secLeft}s)</span> ➔`;
+      btnContinue.innerHTML = `<span>VÀO CHẶNG 2: GHÉP NĂM & NỐI SỰ KIỆN (${secLeft}s)</span> ➔`;
     }
 
     const startStage2 = () => {
@@ -671,7 +640,7 @@ class MiniGameEngine {
     this.transitionInterval = setInterval(() => {
       secLeft--;
       if (btnContinue) {
-        btnContinue.innerHTML = `<span>BẮT ĐẦU CHẶNG 2 NGAY (${secLeft}s)</span> ➔`;
+        btnContinue.innerHTML = `<span>VÀO CHẶNG 2: GHÉP NĂM & NỐI SỰ KIỆN (${secLeft}s)</span> ➔`;
       }
       if (secLeft <= 0) {
         startStage2();
