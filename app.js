@@ -188,7 +188,7 @@ class HistoricalQuizApp {
     // Ẩn thanh HUD góc trên khi chơi mini-game hoặc ở màn đăng ký đại biểu / sảnh chờ
     const topHud = document.querySelector('.top-hud-bar');
     if (topHud) {
-      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen' || screenId === 'join-screen' || screenId === 'lobby-screen' || screenId === 'player-wait-screen') {
+      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen' || screenId === 'join-screen' || screenId === 'lobby-screen' || screenId === 'player-wait-screen' || screenId === 'projector-screen' || screenId === 'podium-screen') {
         topHud.style.display = 'none';
       } else {
         topHud.style.display = 'flex';
@@ -328,7 +328,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 5. Nút Bắt đầu Mini-Game từ Sảnh Chờ (Chủ tọa phát lệnh)
+    // 5. Nút Bắt đầu từ Sảnh Chờ (Chủ tọa phát lệnh) - Host vào màn chiếu Spectator
     const startBattleBtn = document.getElementById('btn-start-lobby-game');
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
@@ -336,9 +336,13 @@ class HistoricalQuizApp {
           alert('Chỉ có Chủ tọa (máy tạo phòng) mới có quyền phát lệnh bắt đầu trò chơi!');
           return;
         }
-        soundEngine.playClick();
-        this.multiplayer.broadcastStartGame('minigame');
-        this.miniGame.startTimelineGame();
+        soundEngine.playFanfare();
+        const durationSel = document.getElementById('select-game-duration');
+        const dur = durationSel ? parseInt(durationSel.value, 10) : 600;
+        this.multiplayer.broadcastStartGame('minigame', dur);
+        // Host vào màn chiếu Spectator để quan sát, KHÔNG chơi
+        this.switchScreen('projector-screen');
+        this.startProjectorMode(dur, this.multiplayer.gameEndAt);
       });
     }
 
@@ -456,6 +460,309 @@ class HistoricalQuizApp {
         this.renderLeaderboard(document.getElementById('final-podium-list'), 'hall');
       });
     }
+
+    // 13. Nút Projector Screen: Quay lại sảnh
+    const projBackBtn = document.getElementById('btn-projector-back');
+    if (projBackBtn) {
+      projBackBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.stopProjectorMode();
+        this.switchScreen('lobby-screen');
+      });
+    }
+
+    // 14. Nút Kết thúc sớm từ Projector Screen (Không dùng confirm chặn luồng)
+    const endEarlyBtn = document.getElementById('btn-end-game-early');
+    if (endEarlyBtn) {
+      endEarlyBtn.addEventListener('click', () => {
+        soundEngine.playFanfare();
+        this.stopProjectorMode();
+        if (this.multiplayer) {
+          this.multiplayer.broadcastGameOver();
+        }
+        this.showPodiumScreen();
+      });
+    }
+
+    // 15. Podium Screen button: Về Trang Chủ
+    const podiumHomeBtn = document.getElementById('btn-podium-home');
+    if (podiumHomeBtn) {
+      podiumHomeBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.multiplayer.leaveRoom();
+        this.switchScreen('start-screen');
+      });
+    }
+  }
+
+  // ================= CHẾ ĐỘ MÀN CHIẾU SPECTATOR =================
+
+  // Khởi động chế độ quan sát màn chiếu (Host) với đồng hồ đếm ngược
+  startProjectorMode(durationSeconds, endAt) {
+    this.projectorEndAt = endAt;
+    this.projectorDuration = durationSeconds;
+    this.projectorActivityFeed = [];
+
+    // Render QR code nhỏ trong màn chiếu
+    const projQrBox = document.getElementById('proj-qr-box');
+    if (projQrBox) {
+      projQrBox.innerHTML = '';
+      const baseUrl = window.location.origin + window.location.pathname;
+      const joinUrl = `${baseUrl}?join=${encodeURIComponent(this.multiplayer.roomId)}`;
+      const roomCodeEl = document.getElementById('proj-room-code-display');
+      if (roomCodeEl) roomCodeEl.innerText = `#${this.multiplayer.roomId}`;
+      if (typeof QRCode !== 'undefined') {
+        try {
+          new QRCode(projQrBox, { text: joinUrl, width: 110, height: 110, colorDark: '#0a0504', colorLight: '#f6c85f', correctLevel: QRCode.CorrectLevel.L });
+        } catch (e) {
+          projQrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(joinUrl)}&bgcolor=f6c85f&color=0a0504&margin=2" style="width:100%;height:100%;object-fit:contain;" />`;
+        }
+      }
+    }
+
+    // Đồng hồ đếm ngược mỗi giây
+    this.projectorTimer = setInterval(() => {
+      this.updateProjectorCountdown();
+    }, 1000);
+
+    // Leaderboard refresh mỗi 2 giây
+    this.projectorLbTimer = setInterval(() => {
+      this.updateProjectorLeaderboard();
+    }, 2000);
+
+    this.updateProjectorCountdown();
+    this.updateProjectorLeaderboard();
+  }
+
+  // Dừng chế độ quan sát
+  stopProjectorMode() {
+    clearInterval(this.projectorTimer);
+    clearInterval(this.projectorLbTimer);
+    this.projectorTimer = null;
+    this.projectorLbTimer = null;
+  }
+
+  // Cập nhật đồng hồ đếm ngược trên màn chiếu
+  updateProjectorCountdown() {
+    const countdownEl = document.getElementById('proj-countdown-val');
+    const barFill = document.getElementById('proj-countdown-bar-fill');
+    const totalEl = document.getElementById('proj-total-players');
+    const finEl = document.getElementById('proj-finished-players');
+
+    // Cập nhật số đại biểu
+    const players = this.multiplayer.players || [];
+    if (totalEl) totalEl.innerText = players.length;
+    if (finEl) finEl.innerText = this.multiplayer.finishedPlayers.length;
+
+    if (!this.projectorEndAt || this.projectorEndAt === 0) {
+      if (countdownEl) countdownEl.innerText = '∞';
+      if (barFill) barFill.style.width = '100%';
+      return;
+    }
+
+    const remaining = Math.max(0, this.projectorEndAt - Date.now());
+    const secs = Math.floor(remaining / 1000);
+    const mins = Math.floor(secs / 60);
+    const ss = String(secs % 60).padStart(2, '0');
+    const timeStr = `${mins}:${ss}`;
+
+    if (countdownEl) {
+      countdownEl.innerText = timeStr;
+      countdownEl.classList.toggle('countdown-warning', secs <= 60);
+      countdownEl.classList.toggle('countdown-danger', secs <= 30);
+    }
+
+    const pct = this.projectorDuration > 0 ? (remaining / (this.projectorDuration * 1000)) * 100 : 100;
+    if (barFill) barFill.style.width = `${Math.max(0, pct)}%`;
+
+    // Khi hết giờ -> tự động kết thúc và hiện podium
+    if (remaining === 0) {
+      this.stopProjectorMode();
+      soundEngine.playFanfare();
+      if (this.multiplayer) {
+        this.multiplayer.broadcastGameOver();
+      }
+      this.showPodiumScreen();
+    }
+  }
+
+  // Cập nhật bảng xếp hạng live trên màn chiếu
+  updateProjectorLeaderboard() {
+    const rowsEl = document.getElementById('proj-lb-rows');
+    if (!rowsEl) return;
+
+    const lb = this.multiplayer.getRoomLeaderboard();
+    const topN = lb.slice(0, 10);
+
+    // Cập nhật số liệu thống kê ở header
+    const totalEl = document.getElementById('proj-total-players');
+    const finEl = document.getElementById('proj-finished-players');
+    if (totalEl) totalEl.innerText = lb.length;
+    if (finEl) finEl.innerText = lb.filter(p => p.isFinished).length;
+
+    rowsEl.innerHTML = '';
+    if (topN.length === 0) {
+      rowsEl.innerHTML = `
+        <div class="proj-lb-empty">
+          <span class="proj-empty-icon">📱</span>
+          <div class="proj-empty-title">CHƯA CÓ ĐẠI BIỂU THAM GIA THI ĐẤU</div>
+          <div class="proj-empty-sub">Hãy dùng điện thoại quét mã QR góc bên phải để gia nhập hội nghị!</div>
+        </div>
+      `;
+      return;
+    }
+
+    topN.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = `proj-lb-row ${item.isFinished ? 'proj-finished' : ''}`;
+
+      const rankBadges = ['🥇', '🥈', '🥉'];
+      const rankStr = idx < 3 ? rankBadges[idx] : `${idx + 1}`;
+
+      const timeText = item.isFinished
+        ? (item.formattedTime || '--:--')
+        : (item.score > 0 ? '⏳ đang thi' : '⏳ chờ...');
+
+      // Progress: nếu đã xong thì 100%, còn thì ước lượng theo điểm
+      const progressPct = item.isFinished ? 100 : Math.min(99, Math.floor((item.score / 2500) * 100));
+
+      row.innerHTML = `
+        <span class="plb-col-rank plbr-${idx + 1}">${rankStr}</span>
+        <div class="plb-col-player">
+          <span class="plb-avatar">${item.avatar || '⭐'}</span>
+          <span class="plb-name">${item.name}</span>
+          ${item.isFinished ? '<span class="plb-done-badge">✓ XONG</span>' : ''}
+        </div>
+        <div class="plb-col-progress">
+          <div class="plb-progress-bar"><div class="plb-progress-fill" style="width:${progressPct}%"></div></div>
+          <span class="plb-pct">${progressPct}%</span>
+        </div>
+        <span class="plb-col-time">${timeText}</span>
+        <strong class="plb-col-score">${item.score.toLocaleString()}đ</strong>
+      `;
+      rowsEl.appendChild(row);
+    });
+  }
+
+  // Thêm dòng vào feed hoạt động gần đây
+  addProjectorActivity(message, type = 'info') {
+    const feedEl = document.getElementById('proj-activity-list');
+    if (!feedEl) return;
+
+    const item = document.createElement('div');
+    item.className = `proj-activity-item proj-act-${type}`;
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    item.innerHTML = `<span class="proj-act-time">${timeStr}</span> ${message}`;
+    feedEl.insertBefore(item, feedEl.firstChild);
+
+    // Giữ tối đa 8 dòng
+    while (feedEl.children.length > 8) feedEl.removeChild(feedEl.lastChild);
+  }
+
+  // ================= MÀN VINH DANH TOP 5 (PODIUM CEREMONY) =================
+
+  showPodiumScreen() {
+    soundEngine.playFanfare();
+    this.switchScreen('podium-screen');
+
+    const lb = this.multiplayer.getRoomLeaderboard();
+    const top5 = lb.slice(0, 5);
+    const total = lb.length;
+    const finished = lb.filter(p => p.isFinished).length;
+    const topScore = top5.length > 0 ? top5[0].score : 0;
+
+    // Thống kê
+    const totEl = document.getElementById('podium-total-players');
+    const finEl = document.getElementById('podium-finished-count');
+    const scoreEl = document.getElementById('podium-top-score');
+    if (totEl) totEl.innerText = total;
+    if (finEl) finEl.innerText = finished;
+    if (scoreEl) scoreEl.innerText = `${topScore.toLocaleString()}đ`;
+
+    // Render bục Top 3
+    const stageEl = document.getElementById('podium-top3-stage');
+    if (stageEl) {
+      stageEl.innerHTML = '';
+      // Hiển thị theo thứ tự sân khấu: [2] [1] [3]
+      const podiumOrder = [1, 0, 2]; // index trong top5
+      const heights = ['120px', '160px', '90px'];
+      const labels = ['🥈 Hạng Nhì', '🥇 Hạng Nhất', '🥉 Hạng Ba'];
+      const glows = ['#c0c0c0', '#ffd700', '#cd7f32'];
+
+      podiumOrder.forEach((dataIdx, stagePos) => {
+        const player = top5[dataIdx];
+        const block = document.createElement('div');
+        block.className = `podium-pillar podium-pos-${stagePos + 1}`;
+        if (!player) {
+          block.innerHTML = `<div class="podium-empty-slot">${labels[stagePos]}</div>`;
+          stageEl.appendChild(block);
+          return;
+        }
+        block.style.setProperty('--pillar-h', heights[stagePos]);
+        block.style.setProperty('--pillar-glow', glows[stagePos]);
+        block.innerHTML = `
+          <div class="podium-player-card animate-appear">
+            <div class="podium-avatar-big">${player.avatar || '⭐'}</div>
+            <div class="podium-player-name">${player.name}</div>
+            <div class="podium-player-score">${player.score.toLocaleString()}đ</div>
+            ${player.formattedTime ? `<div class="podium-player-time">⏱️ ${player.formattedTime}</div>` : ''}
+          </div>
+          <div class="podium-base" style="height:var(--pillar-h);">
+            <div class="podium-rank-label">${labels[stagePos]}</div>
+          </div>
+        `;
+        stageEl.appendChild(block);
+      });
+    }
+
+    // Render hạng 4-5
+    const restEl = document.getElementById('podium-rest-list');
+    if (restEl) {
+      restEl.innerHTML = '';
+      top5.slice(3).forEach((player, idx) => {
+        const row = document.createElement('div');
+        row.className = 'podium-rest-row animate-appear';
+        row.innerHTML = `
+          <span class="podium-rest-rank">${idx + 4}.</span>
+          <span class="podium-rest-avatar">${player.avatar || '⭐'}</span>
+          <span class="podium-rest-name">${player.name}</span>
+          <span class="podium-rest-time">${player.formattedTime || '--:--'}</span>
+          <strong class="podium-rest-score">${player.score.toLocaleString()}đ</strong>
+        `;
+        restEl.appendChild(row);
+      });
+    }
+  }
+
+  // Xử lý khi nhận GAME_OVER từ Host (điện thoại người chơi)
+  onGameOverReceived(leaderboard) {
+    // Người chơi trên điện thoại tự lưu kết quả và hiện màn tổng kết
+    if (this.miniGame) {
+      this.miniGame.clearSpeedTimer && this.miniGame.clearSpeedTimer();
+      this.miniGame.stopStopwatch && this.miniGame.stopStopwatch();
+    }
+    soundEngine.playFanfare();
+    // Hiện màn summary cá nhân cho điện thoại người chơi
+    const scoreNow = this.score || 0;
+    this.showSummary({ score: scoreNow, formattedTime: this.miniGame ? this.miniGame.getFormattedTime() : '00:00', timeSeconds: 0, speedBonus: 0 });
+  }
+
+  // Đồng hồ đếm ngược nhỏ trên màn hình điện thoại người chơi (hiển thị ở HUD)
+  startClientCountdown(endAt, durationSeconds) {
+    clearInterval(this.clientCountdownTimer);
+    if (!endAt || endAt === 0) return;
+    const hudTimerEl = document.getElementById('timeline-stopwatch-val');
+    this.clientCountdownTimer = setInterval(() => {
+      const remaining = Math.max(0, endAt - Date.now());
+      const secs = Math.floor(remaining / 1000);
+      const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+      const ss = String(secs % 60).padStart(2, '0');
+      if (hudTimerEl) hudTimerEl.innerText = `${mm}:${ss}`;
+      if (remaining === 0) {
+        clearInterval(this.clientCountdownTimer);
+      }
+    }, 1000);
   }
 
   // Mở màn hình Đăng Ký Đại Biểu (khi quét mã QR hoặc mở link tham gia)

@@ -24,8 +24,10 @@
     <!-- Thanh HUD trên cùng -->
     <header class="top-hud-bar">
       <div class="hud-actions">
-        <button id="btn-leaderboard-hud" class="btn-icon btn-hud-leaderboard" title="Bảng Xếp Hạng Kỷ Lục">🏆 BXH</button>
-        <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem Intro</button>
+        <button id="btn-leaderboard-hud" class="btn-icon btn-hud-leaderboard" title="Bảng Xếp Hạng Kỷ Lục">🏆
+          BXH</button>
+        <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem
+          Intro</button>
         <button id="btn-toggle-sound" class="btn-icon" title="Bật/Tắt Âm thanh">🔔</button>
         <button id="btn-fullscreen" class="btn-icon" title="Toàn màn hình">⛶</button>
       </div>
@@ -72,29 +74,19 @@
     <!-- ================= 1. MÀN HÌNH KHỞI ĐỘNG (START SCREEN) ================= -->
     <main id="start-screen" class="screen active">
       <div class="start-screen-overlay-zone">
-        <!-- Khung tiêu đề game chính (Responsive không bao giờ bị cắt chữ) -->
+        <!-- Khung tiêu đề game chính + Nút tạo phòng (Không bao giờ che chữ) -->
         <div class="start-title-hero">
           <div class="game-pretitle-tag">TRÒ CHƠI LỊCH SỬ ĐỐ VUI ĐỐI KHÁNG</div>
           <h1 class="game-main-title">BÌNH MINH THỐNG NHẤT</h1>
           <div class="game-subtitle">ÁNH SÁNG CỬU LONG (1930)</div>
-        </div>
 
-        <!-- Khung điều khiển trung tâm dưới chân trang -->
-        <div class="start-controls-panel">
-          <button class="btn-art-play-trigger" id="btn-main-play" title="Dành cho máy tính / máy chiếu tạo phòng">
-            <div class="btn-fire-glow-border"></div>
-            <span class="btn-spark-particle spark-1">✦</span>
-            <span class="btn-trigger-text">📺 MÁY CHIẾU: TẠO PHÒNG QR</span>
-            <span class="btn-spark-particle spark-2">✦</span>
-          </button>
-
-          <!-- 2 Nút phụ: Dành cho Điện thoại vào phòng & Chơi đơn -->
-          <div class="start-sub-modes-row">
-            <button type="button" class="btn-sub-pill btn-pill-minigame" id="btn-mode-phone-join" title="Tham gia phòng thi đấu trên điện thoại">
-              📱 ĐIỆN THOẠI VÀO PHÒNG
-            </button>
-            <button type="button" class="btn-sub-pill btn-pill-quiz" id="btn-mode-solo-play" title="Chơi đơn luyện tập mini-game">
-              ⚡ CHƠI ĐƠN LUYỆN TẬP
+          <!-- Nút bắt đầu tạo phòng QR duy nhất (Đã bỏ 2 nút phụ ở dưới theo yêu cầu) -->
+          <div class="start-controls-panel">
+            <button class="btn-art-play-trigger" id="btn-main-play" title="Dành cho máy tính / máy chiếu tạo phòng">
+              <div class="btn-fire-glow-border"></div>
+              <span class="btn-spark-particle spark-1">✦</span>
+              <span class="btn-trigger-text">Vào chơi</span>
+              <span class="btn-spark-particle spark-2">✦</span>
             </button>
           </div>
         </div>
@@ -127,7 +119,8 @@
             <!-- Ô nhập Họ Tên / Biệt danh -->
             <div class="form-group">
               <label for="input-player-name">HỌ TÊN / BIỆT DANH ĐẠI BIỂU:</label>
-              <input type="text" id="input-player-name" placeholder="Ví dụ: Nguyễn Văn A..." maxlength="25" required autocomplete="name">
+              <input type="text" id="input-player-name" placeholder="Ví dụ: Nguyễn Văn A..." maxlength="25" required
+                autocomplete="name">
             </div>
 
             <!-- Chọn Huy hiệu Lịch sử đại diện -->
@@ -194,6 +187,17 @@
           <div class="lobby-footer">
             <button class="btn-secondary" id="btn-lobby-back">⬅ Rời Phòng</button>
             <div class="lobby-host-actions" id="lobby-host-actions">
+              <!-- Chọn thời gian giới hạn -->
+              <div class="timer-preset-row">
+                <span class="timer-preset-label">⏱️ Thời gian:</span>
+                <select id="select-game-duration" class="timer-select">
+                  <option value="600">10 phút</option>
+                  <option value="300">5 phút</option>
+                  <option value="900">15 phút</option>
+                  <option value="1200">20 phút</option>
+                  <option value="0">Không giới hạn</option>
+                </select>
+              </div>
               <button class="btn-primary-start" id="btn-start-lobby-game">🚀 BẮT ĐẦU TRÒ CHƠI CHO TẤT CẢ</button>
             </div>
           </div>
@@ -228,7 +232,8 @@
             <div class="instruction-icon">📺</div>
             <div class="instruction-text">
               <strong>VUI LÒNG NHÌN LÊN MÀN HÌNH MÁY CHIẾU!</strong>
-              <p>Chủ tọa đang chuẩn bị khai mạc. Trò chơi sẽ tự động bắt đầu trên điện thoại của bạn ngay khi Chủ tọa bấm nút bắt đầu.</p>
+              <p>Chủ tọa đang chuẩn bị khai mạc. Trò chơi sẽ tự động bắt đầu trên điện thoại của bạn ngay khi Chủ tọa
+                bấm nút bắt đầu.</p>
             </div>
           </div>
 
@@ -305,7 +310,8 @@
             <span class="speed-card-icon" id="speed-card-icon">🚢</span>
           </div>
           <h4 class="speed-event-title" id="speed-event-title">Khởi đầu hành trình bôn ba ba đại dương</h4>
-          <p class="speed-event-desc" id="speed-event-desc">Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô đốc Latouche-Tréville rời Bến cảng Nhà Rồng ra đi tìm con đường cứu nước.</p>
+          <p class="speed-event-desc" id="speed-event-desc">Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô
+            đốc Latouche-Tréville rời Bến cảng Nhà Rồng ra đi tìm con đường cứu nước.</p>
           <div class="speed-event-hint" id="speed-event-hint">💡 Gợi ý: Bến Nhà Rồng - Tàu buôn Pháp</div>
         </div>
 
@@ -343,7 +349,8 @@
 
         <!-- Hướng dẫn cách chơi -->
         <div class="minigame-instruction-bar">
-          <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện]</em> + <em>[Địa Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long!</span>
+          <span>🎯 <strong>Nhiệm vụ:</strong> Chọn 1 ô ở mỗi cột <em>[Nhân Vật]</em> + <em>[Sự Kiện]</em> + <em>[Địa
+              Bàn]</em> có liên quan lịch sử để giải mã bức điện tín gửi về Hội nghị Cửu Long!</span>
         </div>
 
         <!-- Thanh trạng thái bộ ba đang chọn (Tối ưu cho Mobile & Desktop) -->
@@ -477,8 +484,123 @@
 
           <!-- Hành động -->
           <div class="summary-actions-row">
-            <button class="btn-primary-start" id="btn-replay-game">🔄 VÀO VÒNG ĐẤU MỚI</button>
+            <button class="btn-primary-start" id="btn-replay-game">🏠 VỀ TRANG CHỦ</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 5. MÀN CHIẾU SPECTATOR - QUAN SÁT TRỰC TIẾP (DÀNH CHO MÁY CHIẾU KHI GAME CHẠY) ================= -->
+    <section id="projector-screen" class="screen">
+      <div class="projector-wrapper">
+        <!-- Header với đồng hồ đếm ngược lớn -->
+        <div class="projector-header">
+          <div class="projector-title-group">
+            <span class="proj-badge">🏛️ HỘI NGHỊ THÀNH LẬP ĐẢNG 1930</span>
+            <h2 class="proj-headline">⚡ CUỘC ĐUA TRI THỨC LỊCH SỬ</h2>
+          </div>
+          <div class="proj-countdown-box" id="proj-countdown-box">
+            <div class="proj-countdown-label">⏱️ THỜI GIAN CÒN LẠI</div>
+            <div class="proj-countdown-val" id="proj-countdown-val">10:00</div>
+            <div class="proj-countdown-bar-track">
+              <div class="proj-countdown-bar-fill" id="proj-countdown-bar-fill"></div>
+            </div>
+          </div>
+          <div class="proj-stats-group">
+            <div class="proj-stat-chip">
+              <span>👥 ĐÃ VÀO</span>
+              <strong id="proj-total-players">0</strong>
+            </div>
+            <div class="proj-stat-chip">
+              <span>🏁 XONG</span>
+              <strong id="proj-finished-players">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body: Bảng xếp hạng live 2 cột -->
+        <div class="projector-body">
+          <!-- Cột trái: Live leaderboard -->
+          <div class="proj-leaderboard-panel">
+            <div class="proj-lb-header">
+              <span>🏆 BẢNG XẾP HẠNG TRỰC TIẾP</span>
+              <span class="proj-lb-hint">Cập nhật tức thì</span>
+            </div>
+            <div class="proj-lb-table-head">
+              <span class="plb-th plb-th-rank">Hạng</span>
+              <span class="plb-th plb-th-player">Đại Biểu</span>
+              <span class="plb-th plb-th-progress">Tiến Độ</span>
+              <span class="plb-th plb-th-time">Thời Gian</span>
+              <span class="plb-th plb-th-score">Điểm</span>
+            </div>
+            <div class="proj-lb-rows" id="proj-lb-rows">
+              <!-- Render động -->
+            </div>
+          </div>
+
+          <!-- Cột phải: Thẻ hoạt động gần đây + QR -->
+          <div class="proj-side-panel">
+            <div class="proj-activity-feed">
+              <div class="proj-activity-header">⚡ NHẬT KÝ THI ĐẤU</div>
+              <div class="proj-activity-list" id="proj-activity-list">
+                <!-- Feed động -->
+              </div>
+            </div>
+            <div class="proj-qr-remind">
+              <div class="proj-qr-title">📱 Quét QR để thi đấu</div>
+              <div id="proj-qr-box" class="proj-qr-canvas"></div>
+              <div class="proj-room-code" id="proj-room-code-display">#1930-VN</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer với nút kết thúc sớm -->
+        <div class="projector-footer">
+          <button class="btn-secondary" id="btn-projector-back">⬅ Về Sảnh</button>
+          <button class="btn-end-game" id="btn-end-game-early">🏁 KẾT THÚC SỚM + VINH DANH TOP 5</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 6. MÀN VINH DANH TOP 5 (PODIUM CEREMONY) ================= -->
+    <section id="podium-screen" class="screen">
+      <div class="podium-ceremony-wrapper">
+        <div class="podium-ceremony-header">
+          <div class="podium-firework-row">
+            <span class="fw">🎆</span><span class="fw fw2">🏆</span><span class="fw fw3">🎆</span>
+          </div>
+          <h1 class="podium-headline">🏆 VINH DANH ĐẠI BIỂU XUẤT SẮC</h1>
+          <p class="podium-subline">HỘI NGHỊ THÀNH LẬP ĐẢNG CỘNG SẢN VIỆT NAM (1930)</p>
+        </div>
+
+        <!-- Top 3 Bục vinh quang -->
+        <div class="podium-top3-stage" id="podium-top3-stage">
+          <!-- Render động: vị trí 2, 1, 3 -->
+        </div>
+
+        <!-- Top 4-5 danh sách -->
+        <div class="podium-rest-list" id="podium-rest-list">
+          <!-- Render động hạng 4-5 -->
+        </div>
+
+        <!-- Thống kê chung -->
+        <div class="podium-stats-row">
+          <div class="podium-stat">
+            <div class="podium-stat-val" id="podium-total-players">0</div>
+            <div class="podium-stat-desc">Đại Biểu Tham Gia</div>
+          </div>
+          <div class="podium-stat highlight">
+            <div class="podium-stat-val" id="podium-finished-count">0</div>
+            <div class="podium-stat-desc">Hoàn Thành Xuất Sắc</div>
+          </div>
+          <div class="podium-stat">
+            <div class="podium-stat-val" id="podium-top-score">0đ</div>
+            <div class="podium-stat-desc">Điểm Cao Nhất</div>
+          </div>
+        </div>
+
+        <div class="podium-footer-actions">
+          <button class="btn-primary-start" id="btn-podium-home">🏠 VỀ TRANG CHỦ</button>
         </div>
       </div>
     </section>

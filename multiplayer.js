@@ -243,6 +243,8 @@ class MultiplayerManager {
         case 'PLAYER_JOIN': {
           const incoming = data.player;
           if (!incoming || incoming.id === this.playerId) break;
+          // Bỏ qua nếu là tài khoản Chủ Tọa / Máy Chủ khác
+          if (incoming.isHost || (incoming.name && incoming.name.includes('Chủ Tọa'))) break;
 
           let existing = this.players.find(p => p.id === incoming.id);
           if (!existing) {
@@ -263,6 +265,12 @@ class MultiplayerManager {
           if (this.isHost) {
             this.broadcastRoster();
           }
+          if (this.app && typeof this.app.addProjectorActivity === 'function') {
+            this.app.addProjectorActivity(`👋 Đại biểu <b>${incoming.name}</b> đã vào phòng!`, 'join');
+          }
+          if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+            this.app.updateProjectorLeaderboard();
+          }
           break;
         }
 
@@ -270,6 +278,8 @@ class MultiplayerManager {
         case 'PEER_PRESENCE': {
           const peer = data.player;
           if (!peer || peer.id === this.playerId) break;
+          // Bỏ qua nhịp tim từ các máy Chủ Tọa / Máy Chiếu khác
+          if (peer.isHost || (peer.name && peer.name.includes('Chủ Tọa'))) break;
 
           let existing = this.players.find(p => p.id === peer.id);
           if (!existing) {
@@ -303,6 +313,7 @@ class MultiplayerManager {
           if (Array.isArray(data.players)) {
             data.players.forEach(p => {
               if (p.id === this.playerId) return;
+              if (p.isHost || (p.name && p.name.includes('Chủ Tọa'))) return; // Không nạp host khác vào danh sách đại biểu
               let existing = this.players.find(ex => ex.id === p.id);
               if (!existing) {
                 this.players.push({ ...p, lastSeen: Date.now() });
@@ -337,8 +348,25 @@ class MultiplayerManager {
             p.timeSeconds = 0;
             p.formattedTime = null;
           });
+          // Lưu thông tin đồng hồ
+          this.gameDuration = data.durationSeconds || 0;
+          this.gameEndAt = data.endAt || 0;
           if (this.app && this.app.miniGame) {
             this.app.miniGame.startTimelineGame();
+          }
+          // Nhắc nhở đồng hồ đếm ngược phía client
+          if (this.app && typeof this.app.startClientCountdown === 'function') {
+            this.app.startClientCountdown(data.endAt, data.durationSeconds);
+          }
+          break;
+        }
+
+        // Nhận lệnh kết thúc game từ chủ tọa
+        case 'GAME_OVER': {
+          if (data.senderId === this.playerId) break;
+          console.log('🏁 Nhận GAME_OVER từ chủ tọa');
+          if (this.app && typeof this.app.onGameOverReceived === 'function') {
+            this.app.onGameOverReceived(data.leaderboard || []);
           }
           break;
         }
@@ -348,7 +376,9 @@ class MultiplayerManager {
           const target = this.players.find(p => p.id === data.playerId);
           if (target) {
             target.score = data.score;
-            this.updateLiveRosterScores();
+            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+              this.app.updateProjectorLeaderboard();
+            }
           }
           break;
         }
@@ -370,6 +400,12 @@ class MultiplayerManager {
               pRoom.timeSeconds = finPlayer.timeSeconds;
               pRoom.formattedTime = finPlayer.formattedTime;
               pRoom.isFinished = true;
+            }
+            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+              this.app.updateProjectorLeaderboard();
+            }
+            if (this.app && typeof this.app.addProjectorActivity === 'function') {
+              this.app.addProjectorActivity(`🎉 <b>${finPlayer.name}</b> đã hoàn thành xuất sắc! (${finPlayer.score.toLocaleString()}đ - ⏱️ ${finPlayer.formattedTime})`, 'finish');
             }
             if (this.app && typeof this.app.updateLiveLeaderboard === 'function') {
               this.app.updateLiveLeaderboard();
@@ -402,7 +438,7 @@ class MultiplayerManager {
   }
 
   // Bắt đầu game cho tất cả các máy trong phòng (Chỉ Chủ tọa mới có quyền phát lệnh)
-  broadcastStartGame(mode) {
+  broadcastStartGame(mode, durationSeconds) {
     if (!this.isHost) {
       console.warn('Từ chối phát lệnh vì chỉ có Chủ tọa mới có quyền bắt đầu trò chơi!');
       return;
@@ -414,10 +450,26 @@ class MultiplayerManager {
       p.timeSeconds = 0;
       p.formattedTime = null;
     });
+    const dur = (durationSeconds !== undefined ? durationSeconds : 600);
+    const endAt = dur > 0 ? (Date.now() + dur * 1000) : 0;
+    this.gameDuration = dur;
+    this.gameEndAt = endAt;
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'START_GAME',
       senderId: this.playerId,
-      mode: mode || 'minigame'
+      mode: mode || 'minigame',
+      durationSeconds: dur,
+      endAt: endAt
+    });
+  }
+
+  // Phát lệnh kết thúc game sớm (Host only)
+  broadcastGameOver() {
+    if (!this.isHost) return;
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'GAME_OVER',
+      senderId: this.playerId,
+      leaderboard: this.getRoomLeaderboard().slice(0, 5)
     });
   }
 
@@ -453,20 +505,22 @@ class MultiplayerManager {
     }
   }
 
-  // Trả về danh sách xếp hạng của phòng hiện tại
+  // Trả về danh sách xếp hạng của phòng hiện tại (chỉ lấy các đại biểu dự thi)
   getRoomLeaderboard() {
-    const list = this.players.map(p => {
-      const fin = this.finishedPlayers.find(f => f.id === p.id);
-      return {
-        id: p.id,
-        name: p.name,
-        avatar: p.avatar,
-        score: fin ? fin.score : (p.score || 0),
-        timeSeconds: fin ? fin.timeSeconds : (p.timeSeconds || 9999),
-        formattedTime: fin ? fin.formattedTime : (p.formattedTime || '--:--'),
-        isFinished: !!fin || !!p.isFinished
-      };
-    });
+    const list = this.players
+      .filter(p => !p.isHost && p.name !== 'Chủ Tọa (Máy Chiếu)')
+      .map(p => {
+        const fin = this.finishedPlayers.find(f => f.id === p.id);
+        return {
+          id: p.id,
+          name: p.name,
+          avatar: p.avatar,
+          score: fin ? fin.score : (p.score || 0),
+          timeSeconds: fin ? fin.timeSeconds : (p.timeSeconds || 9999),
+          formattedTime: fin ? fin.formattedTime : (p.formattedTime || '--:--'),
+          isFinished: !!fin || !!p.isFinished
+        };
+      });
 
     list.sort((a, b) => {
       if (a.isFinished && !b.isFinished) return -1;
@@ -515,33 +569,44 @@ class MultiplayerManager {
     const codeEl = document.getElementById('lobby-room-code-val');
     if (codeEl) codeEl.innerText = `#${this.roomId}`;
 
+    // Lọc danh sách các đại biểu thực tế thi đấu (loại bỏ hoàn toàn tài khoản Chủ Tọa / Máy Chiếu)
+    const delegates = this.players.filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')));
+
     const countEl = document.getElementById('lobby-ready-count');
     if (countEl) {
-      countEl.innerText = `${this.players.length} đại biểu`;
+      countEl.innerText = `${delegates.length} đại biểu`;
     }
 
     // Render danh sách thẻ đại biểu trong sảnh máy chiếu
     const gridEl = document.getElementById('lobby-players-grid');
     if (gridEl) {
       gridEl.innerHTML = '';
-      this.players.forEach((p) => {
-        const item = document.createElement('div');
-        item.className = 'player-card animate-appear';
-        if (p.id === this.playerId) item.classList.add('is-me');
-        if (p.isHost) item.classList.add('is-host');
-
-        item.innerHTML = `
-          <div class="player-avatar">${p.avatar || '⭐'}</div>
-          <div class="player-info">
-            <div class="player-name">
-              ${p.name} ${p.id === this.playerId ? '<span class="you-tag">(Bạn)</span>' : ''}
-              ${p.isHost ? '<span class="host-tag">Chủ Tọa</span>' : ''}
-            </div>
-            <div class="player-status">${p.score > 0 ? `${p.score}đ` : 'Sẵn sàng'}</div>
+      if (delegates.length === 0) {
+        gridEl.innerHTML = `
+          <div class="lobby-empty-placeholder">
+            <span class="lobby-empty-icon">⏳</span>
+            <div class="lobby-empty-title">ĐANG CHỜ ĐẠI BIỂU VÀO PHÒNG...</div>
+            <div class="lobby-empty-hint">Dùng camera điện thoại quét mã QR bên phải để tham gia!</div>
           </div>
         `;
-        gridEl.appendChild(item);
-      });
+      } else {
+        delegates.forEach((p) => {
+          const item = document.createElement('div');
+          item.className = 'player-card animate-appear';
+          if (p.id === this.playerId) item.classList.add('is-me');
+
+          item.innerHTML = `
+            <div class="player-avatar">${p.avatar || '⭐'}</div>
+            <div class="player-info">
+              <div class="player-name">
+                ${p.name} ${p.id === this.playerId ? '<span class="you-tag">(Bạn)</span>' : ''}
+              </div>
+              <div class="player-status">${p.score > 0 ? `${p.score}đ` : 'Sẵn sàng'}</div>
+            </div>
+          `;
+          gridEl.appendChild(item);
+        });
+      }
     }
 
     // Khung nút phát lệnh bắt đầu: chỉ hiển thị cho máy chiếu chủ tọa
@@ -564,28 +629,31 @@ class MultiplayerManager {
     if (myAvatarEl) myAvatarEl.innerText = this.playerAvatar || '⭐';
     if (myNameEl) myNameEl.innerText = `Đại biểu ${this.playerName || 'Khách'}`;
 
+    const delegates = this.players.filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')));
+
     const rosterCountEl = document.getElementById('wait-roster-count');
     if (rosterCountEl) {
-      rosterCountEl.innerText = `${this.players.length} đại biểu`;
+      rosterCountEl.innerText = `${delegates.length} đại biểu`;
     }
 
     const rosterChipsEl = document.getElementById('wait-roster-chips');
     if (rosterChipsEl) {
       rosterChipsEl.innerHTML = '';
-      this.players.forEach((p) => {
-        const chip = document.createElement('div');
-        chip.className = 'wait-chip-item animate-appear';
-        if (p.id === this.playerId) chip.classList.add('is-me');
-        if (p.isHost) chip.classList.add('is-host');
+      if (delegates.length === 0) {
+        rosterChipsEl.innerHTML = `<span style="font-size:0.82rem;color:var(--parchment-dim);font-style:italic;padding:8px 12px;">Đang chờ các đại biểu khác vào phòng...</span>`;
+      } else {
+        delegates.forEach((p) => {
+          const chip = document.createElement('div');
+          chip.className = 'wait-chip-item animate-appear';
+          if (p.id === this.playerId) chip.classList.add('is-me');
 
-        chip.innerHTML = `
-          <span class="chip-avatar">${p.avatar || '⭐'}</span>
-          <span class="chip-name">${p.name}</span>
-          ${p.isHost ? '<span class="chip-host-badge">Chủ Tọa</span>' : ''}
-          ${p.id === this.playerId ? '<span class="chip-me-badge">Bạn</span>' : ''}
-        `;
-        rosterChipsEl.appendChild(chip);
-      });
+          chip.innerHTML = `
+            <span class="chip-avatar">${p.avatar || '⭐'}</span>
+            <span class="chip-name">${p.name} ${p.id === this.playerId ? '(Bạn)' : ''}</span>
+          `;
+          rosterChipsEl.appendChild(chip);
+        });
+      }
     }
   }
 
