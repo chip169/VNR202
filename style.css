@@ -1703,6 +1703,20 @@ html, body {
   box-shadow: 0 0 12px rgba(255, 193, 7, 0.3);
 }
 
+.podium-empty-state {
+  padding: 22px 14px;
+  text-align: center;
+  color: var(--parchment-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  border: 1px dashed rgba(212, 175, 55, 0.2);
+}
+
 .podium-item .col-rank {
   font-family: var(--font-heading);
   font-weight: 800;

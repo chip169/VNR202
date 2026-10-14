@@ -448,22 +448,26 @@ class HistoricalQuizApp {
       const stored = localStorage.getItem('vnr202_hall_of_fame');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Lọc bỏ triệt để mọi dữ liệu mẫu ảo trước đây
+          const mockNames = ["Nguyễn Ái Quốc", "Trần Phú", "Nguyễn Đức Cảnh", "Đại Biểu Nam Kỳ", "Chiến Sĩ Sa Diện"];
+          const mockDates = ["3/2/1930", "10/1930", "1928", "1929", "1924"];
+          const realRecords = parsed.filter(item => {
+            if (!item || !item.name) return false;
+            const nameTrim = item.name.trim();
+            if (mockNames.includes(nameTrim)) return false;
+            if (mockDates.includes(item.date)) return false;
+            if (item.isMock) return false;
+            return true;
+          });
+          localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(realRecords));
+          return realRecords;
+        }
       }
     } catch (e) {
       console.warn('Lỗi đọc localStorage:', e);
     }
-
-    // Danh sách kỷ lục lịch sử ban đầu làm mẫu cạnh tranh hào hùng
-    const initialRecords = [
-      { name: "Nguyễn Ái Quốc", avatar: "⭐", score: 2600, timeSeconds: 45, formattedTime: "00:45", date: "3/2/1930", badge: "Chủ Trì Hội Nghị Cửu Long" },
-      { name: "Trần Phú", avatar: "📜", score: 2350, timeSeconds: 58, formattedTime: "00:58", date: "10/1930", badge: "Tổng Bí Thư Đầu Tiên" },
-      { name: "Nguyễn Đức Cảnh", avatar: "⚒️", score: 2150, timeSeconds: 72, formattedTime: "01:12", date: "1928", badge: "Phong Trào Vô Sản Hóa" },
-      { name: "Đại Biểu Nam Kỳ", avatar: "🚢", score: 1950, timeSeconds: 88, formattedTime: "01:28", date: "1929", badge: "An Nam Cộng Sản Đảng" },
-      { name: "Chiến Sĩ Sa Diện", avatar: "⚡", score: 1800, timeSeconds: 96, formattedTime: "01:36", date: "1924", badge: "Tiếng Bom Quảng Châu" }
-    ];
-    localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(initialRecords));
-    return initialRecords;
+    return [];
   }
 
   saveRecordToHallOfFame(record) {
@@ -475,8 +479,8 @@ class HistoricalQuizApp {
         if (b.score !== a.score) return b.score - a.score;
         return a.timeSeconds - b.timeSeconds;
       });
-      // Giữ tối đa top 12 kỷ lục xuất sắc nhất
-      const topList = list.slice(0, 12);
+      // Giữ tối đa top 15 kỷ lục thực tế xuất sắc nhất
+      const topList = list.slice(0, 15);
       localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(topList));
       return topList;
     } catch (e) {
@@ -495,20 +499,29 @@ class HistoricalQuizApp {
     if (tabType === 'room') {
       // Lấy từ phòng thi đấu trực tiếp (Multiplayer)
       items = this.multiplayer ? this.multiplayer.getRoomLeaderboard() : [];
-      if (items.length === 0) {
-        // Nếu chơi solo thì hiển thị kết quả của người chơi hiện tại
+      if (items.length === 0 && this.score > 0) {
+        // Nếu chơi đơn thì hiển thị kết quả thật của người chơi vừa thi đấu
         items = [{
           id: this.multiplayer ? this.multiplayer.playerId : 'me',
-          name: (this.multiplayer && this.multiplayer.playerName) ? this.multiplayer.playerName : 'Bạn (Đại Biểu 1930)',
+          name: (this.multiplayer && this.multiplayer.playerName) ? this.multiplayer.playerName : 'Bạn',
           avatar: (this.multiplayer && this.multiplayer.playerAvatar) ? this.multiplayer.playerAvatar : '⭐',
-          score: this.score || 0,
-          formattedTime: this.lastFormattedTime || '01:25',
+          score: this.score,
+          formattedTime: this.lastFormattedTime || '--:--',
           isFinished: true
         }];
       }
     } else {
-      // Lấy từ Bảng Vàng Kỷ Lục
+      // Lấy từ Bảng Vàng Kỷ Lục (chỉ lưu kết quả người chơi thực)
       items = this.getHallOfFame();
+    }
+
+    if (!items || items.length === 0) {
+      containerEl.innerHTML = `
+        <div class="podium-empty-state">
+          <span>${tabType === 'room' ? '📜 Chưa có đại biểu nào hoàn thành lượt chơi trong phòng.' : '⭐ Chưa có kỷ lục nào được ghi nhận. Hãy hoàn thành nhiệm vụ để lưu danh!'}</span>
+        </div>
+      `;
+      return;
     }
 
     items.forEach((item, idx) => {
