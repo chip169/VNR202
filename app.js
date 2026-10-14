@@ -73,7 +73,107 @@ class HistoricalQuizApp {
       this.miniGame.startTimelineGame();
     } else if (urlParams.get('screen') === 'cipher') {
       this.miniGame.startCipherGame();
+    } else {
+      // Tự động khôi phục phiên khi người chơi hoặc Host bấm F5 / Refresh trang!
+      this.restoreSession();
     }
+  }
+
+  // Lưu trữ phiên hoạt động vào sessionStorage để khi F5/Refresh không bị văng về trang chủ
+  saveSession(extra = {}) {
+    try {
+      const isHost = this.multiplayer && this.multiplayer.isHost;
+      const session = {
+        screen: this.currentScreen,
+        mode: this.mode,
+        role: isHost ? 'host' : 'player',
+        roomId: this.multiplayer ? this.multiplayer.roomId : (this.selectedRoomCode || '1930-VN'),
+        playerName: this.multiplayer ? this.multiplayer.playerName : '',
+        playerAvatar: this.multiplayer ? this.multiplayer.playerAvatar : (this.selectedAvatar || '⭐'),
+        gameEndAt: (this.multiplayer && this.multiplayer.gameEndAt) || this.projectorEndAt || (this.miniGame && this.miniGame.gameEndTime) || 0,
+        gameDuration: (this.multiplayer && this.multiplayer.gameDuration) || this.projectorDuration || 600,
+        score: (this.miniGame && this.miniGame.timelineScore) || this.score || 0,
+        streakCount: (this.miniGame && this.miniGame.streakCount) || 0,
+        timestamp: Date.now(),
+        ...extra
+      };
+      sessionStorage.setItem('vnr202_active_session', JSON.stringify(session));
+    } catch (e) {
+      console.warn('Lỗi lưu session:', e);
+    }
+  }
+
+  // Xóa phiên khi chủ động bấm nút rời phòng / về trang chủ
+  clearSession() {
+    try {
+      sessionStorage.removeItem('vnr202_active_session');
+    } catch (e) {}
+  }
+
+  // Khôi phục phiên làm việc sau khi F5 / Refresh trang
+  restoreSession() {
+    try {
+      const raw = sessionStorage.getItem('vnr202_active_session');
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      if (!s || !s.screen || s.screen === 'start-screen' || s.screen === 'intro-screen') return false;
+
+      // Hết hạn sau 3 tiếng
+      if (s.timestamp && (Date.now() - s.timestamp) > 10800000) {
+        this.clearSession();
+        return false;
+      }
+
+      console.log('🔄 Đang khôi phục phiên làm việc từ refresh:', s.screen, s.role);
+      this.mode = s.mode || 'multiplayer';
+
+      if (s.role === 'host') {
+        // Phục hồi phiên Chủ Tọa / Màn Chiếu
+        this.multiplayer.createRoom(s.roomId || '1930-VN');
+        if (s.screen === 'projector-screen') {
+          this.switchScreen('projector-screen');
+          this.startProjectorMode(s.gameDuration || 600, s.gameEndAt || 0);
+          return true;
+        } else if (s.screen === 'lobby-screen') {
+          this.switchScreen('lobby-screen');
+          return true;
+        }
+      } else {
+        // Phục hồi phiên Điện thoại Đại Biểu
+        const pName = s.playerName || 'Đại biểu';
+        const pAvatar = s.playerAvatar || '⭐';
+        const pRoom = s.roomId || '1930-VN';
+        this.selectedAvatar = pAvatar;
+        this.selectedRoomCode = pRoom;
+
+        if (s.screen === 'timeline-game-screen') {
+          this.multiplayer.joinRoom(pRoom, pName, pAvatar, () => {
+            this.multiplayer.gameEndAt = s.gameEndAt || 0;
+            this.multiplayer.gameDuration = s.gameDuration || 600;
+            if (this.miniGame) {
+              this.miniGame.timelineScore = s.score || 0;
+              this.miniGame.streakCount = s.streakCount || 0;
+              this.miniGame.startTimelineGame();
+            }
+          });
+          return true;
+        } else if (s.screen === 'player-wait-screen') {
+          this.multiplayer.joinRoom(pRoom, pName, pAvatar, () => {
+            this.switchScreen('player-wait-screen');
+          });
+          return true;
+        } else if (s.screen === 'join-screen') {
+          this.openJoinScreen(pRoom);
+          return true;
+        } else if (s.screen === 'summary-screen') {
+          this.showSummary({ score: s.score || 0, formattedTime: '--:--' });
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('Lỗi khôi phục session:', e);
+    }
+    return false;
   }
 
   // Khởi động chuỗi Video Intro Điện Ảnh
@@ -177,6 +277,13 @@ class HistoricalQuizApp {
     if (target) {
       target.classList.add('active');
       this.currentScreen = screenId;
+    }
+
+    // Tự động lưu màn hình hiện tại vào phiên làm việc
+    if (screenId !== 'start-screen' && screenId !== 'intro-screen') {
+      this.saveSession({ screen: screenId });
+    } else {
+      this.clearSession();
     }
 
     // Nút Xem Intro chỉ hiển thị khi ở Start Screen
@@ -549,10 +656,10 @@ class HistoricalQuizApp {
     const totalEl = document.getElementById('proj-total-players');
     const finEl = document.getElementById('proj-finished-players');
 
-    // Cập nhật số đại biểu
-    const players = this.multiplayer.players || [];
-    if (totalEl) totalEl.innerText = players.length;
-    if (finEl) finEl.innerText = this.multiplayer.finishedPlayers.length;
+    // Cập nhật số đại biểu (CHỈ ĐẾM ĐẠI BIỂU THỰC SỰ, LOẠI BỎ TÀI KHOẢN CHỦ TỌA)
+    const delegates = this.multiplayer ? this.multiplayer.getRealDelegates() : [];
+    if (totalEl) totalEl.innerText = delegates.length;
+    if (finEl) finEl.innerText = delegates.filter(p => p.isFinished).length;
 
     if (!this.projectorEndAt || this.projectorEndAt === 0) {
       if (countdownEl) countdownEl.innerText = '∞';
@@ -594,11 +701,12 @@ class HistoricalQuizApp {
     const lb = this.multiplayer.getRoomLeaderboard();
     const topN = lb.slice(0, 10);
 
-    // Cập nhật số liệu thống kê ở header
+    // Cập nhật số liệu thống kê ở header (chỉ đếm đại biểu thực sự)
     const totalEl = document.getElementById('proj-total-players');
     const finEl = document.getElementById('proj-finished-players');
-    if (totalEl) totalEl.innerText = lb.length;
-    if (finEl) finEl.innerText = lb.filter(p => p.isFinished).length;
+    const delegates = this.multiplayer ? this.multiplayer.getRealDelegates() : [];
+    if (totalEl) totalEl.innerText = delegates.length;
+    if (finEl) finEl.innerText = delegates.filter(p => p.isFinished).length;
 
     rowsEl.innerHTML = '';
     if (topN.length === 0) {

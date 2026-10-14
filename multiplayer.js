@@ -10,7 +10,20 @@ class MultiplayerManager {
     this.isHost = false;
     this.createdAsHost = false;
     this.roomId = '1930-VN';
-    this.playerId = 'p_' + Math.random().toString(36).substring(2, 9);
+    
+    // Lưu giữ và tái sử dụng playerId qua sessionStorage để khi F5 / Refresh không sinh đại biểu mới trùng lặp
+    let persistentId = null;
+    try {
+      persistentId = sessionStorage.getItem('vnr202_player_id');
+    } catch (e) {}
+    if (!persistentId) {
+      persistentId = 'p_' + Math.random().toString(36).substring(2, 9);
+      try {
+        sessionStorage.setItem('vnr202_player_id', persistentId);
+      } catch (e) {}
+    }
+    this.playerId = persistentId;
+
     this.playerName = 'Đại biểu Cách mạng';
     this.playerAvatar = '⭐';
     this.joinedAt = Date.now();
@@ -505,6 +518,11 @@ class MultiplayerManager {
     }
   }
 
+  // Lọc chỉ lấy danh sách các đại biểu dự thi thực sự (loại trừ tài khoản Chủ Tọa / Máy Chiếu)
+  getRealDelegates() {
+    return this.players.filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')));
+  }
+
   // Trả về danh sách xếp hạng của phòng hiện tại (chỉ lấy các đại biểu dự thi)
   getRoomLeaderboard() {
     const list = this.players
@@ -570,7 +588,7 @@ class MultiplayerManager {
     if (codeEl) codeEl.innerText = `#${this.roomId}`;
 
     // Lọc danh sách các đại biểu thực tế thi đấu (loại bỏ hoàn toàn tài khoản Chủ Tọa / Máy Chiếu)
-    const delegates = this.players.filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')));
+    const delegates = this.getRealDelegates();
 
     const countEl = document.getElementById('lobby-ready-count');
     if (countEl) {
@@ -629,7 +647,7 @@ class MultiplayerManager {
     if (myAvatarEl) myAvatarEl.innerText = this.playerAvatar || '⭐';
     if (myNameEl) myNameEl.innerText = `Đại biểu ${this.playerName || 'Khách'}`;
 
-    const delegates = this.players.filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')));
+    const delegates = this.getRealDelegates();
 
     const rosterCountEl = document.getElementById('wait-roster-count');
     if (rosterCountEl) {

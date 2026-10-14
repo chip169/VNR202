@@ -364,32 +364,6 @@ class MiniGameEngine {
     if (rankChip) {
       rankChip.className = `player-rank-chip ${rank.class}`;
     }
-
-    // Ribbon mốc tiến trình gần nhất (8 dấu sao/thẻ)
-    const ribbonEl = document.getElementById('timeline-pinned-ribbon');
-    if (ribbonEl) {
-      ribbonEl.innerHTML = '';
-      const displayNodes = [...this.recentResults].slice(-7);
-      displayNodes.push({ status: 'current', label: '?' });
-      while (displayNodes.length < 8) {
-        displayNodes.push({ status: 'pending', label: '○' });
-      }
-
-      displayNodes.forEach(node => {
-        const dot = document.createElement('div');
-        dot.className = `pinned-node ${node.status}`;
-        if (node.status === 'correct') {
-          dot.innerHTML = `<span>⭐</span> <strong>${node.label || 'ĐÚNG'}</strong>`;
-        } else if (node.status === 'wrong') {
-          dot.innerHTML = `<span>❌</span> <strong>${node.label || 'SAI'}</strong>`;
-        } else if (node.status === 'current') {
-          dot.innerHTML = `<span>⏳</span> <strong>${this.questionIndex}</strong>`;
-        } else {
-          dot.innerHTML = `<span>○</span> <strong>-</strong>`;
-        }
-        ribbonEl.appendChild(dot);
-      });
-    }
   }
 
   // Kết xuất Thẻ Thử Thách Trung Tâm
