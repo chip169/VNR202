@@ -321,26 +321,35 @@ class MultiplayerManager {
 
     qrContainer.innerHTML = '';
 
-    if (typeof QRCode !== 'undefined') {
-      try {
-        this.qrInstance = new QRCode(qrContainer, {
-          text: joinUrl,
-          width: 170,
-          height: 170,
-          colorDark: '#0a0504',
-          colorLight: '#f6c85f', // Nền vàng kim ánh sáng Cửu Long
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } catch (e) {
-        this.fallbackQRImage(qrContainer, joinUrl);
-      }
-    } else {
-      this.fallbackQRImage(qrContainer, joinUrl);
-    }
-  }
+    // Dùng ảnh QR code độ nét cao tạo động, hiển thị sắc nét trên mọi điện thoại & Safari
+    const qrImg = document.createElement('img');
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(joinUrl)}&bgcolor=f6c85f&color=0a0504&margin=2`;
+    qrImg.alt = "Mã QR Tham Gia Hội Nghị";
+    qrImg.style.width = "100%";
+    qrImg.style.height = "100%";
+    qrImg.style.objectFit = "contain";
+    qrImg.style.borderRadius = "8px";
+    qrImg.style.display = "block";
 
-  fallbackQRImage(container, url) {
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(url)}&bgcolor=f6c85f&color=0a0504`;
-    container.innerHTML = `<img src="${qrApiUrl}" alt="Mã QR Tham Gia" style="width: 170px; height: 170px; border-radius: 8px;">`;
+    qrImg.onerror = () => {
+      // Dự phòng bằng thư viện QRCodeJS cục bộ với error correction L nếu không có kết nối internet
+      if (typeof QRCode !== 'undefined') {
+        qrContainer.innerHTML = '';
+        try {
+          new QRCode(qrContainer, {
+            text: joinUrl,
+            width: 170,
+            height: 170,
+            colorDark: '#0a0504',
+            colorLight: '#f6c85f',
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        } catch (e) {
+          console.error('QR Render fallback error:', e);
+        }
+      }
+    };
+
+    qrContainer.appendChild(qrImg);
   }
 }
