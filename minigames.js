@@ -148,10 +148,13 @@ class MiniGameEngine {
     this.transitionInterval = null;
 
     // Master Room Timer (5 phút mỗi chặng)
+    this.matchStartTime = null; // Thời điểm bắt đầu toàn bộ trận đấu
     this.gameStartTime = null;
     this.gameEndTime = null;
     this.masterTimer = null;
     this.remainingMasterSeconds = 300; // Mặc định 5 phút (300 giây)
+    this.finalFormattedTime = null;
+    this.finalTimeSeconds = null;
 
     // Cipher state (Màn 2 hỗ trợ dự phòng)
     this.selectedHero = null;
@@ -209,8 +212,10 @@ class MiniGameEngine {
   }
 
   getFormattedTime() {
-    if (!this.gameStartTime) return "00:00";
-    const elapsed = Math.floor((Date.now() - this.gameStartTime) / 1000);
+    if (this.finalFormattedTime) return this.finalFormattedTime;
+    const start = this.matchStartTime || this.gameStartTime;
+    if (!start) return "00:00";
+    const elapsed = Math.max(1, Math.floor((Date.now() - start) / 1000));
     return this.formatTime(elapsed);
   }
 
@@ -297,7 +302,10 @@ class MiniGameEngine {
     this.questionIndex = 0;
     this.recentResults = [];
     this.isSpeedLocked = false;
-    this.gameStartTime = Date.now();
+    if (!this.matchStartTime) {
+      this.matchStartTime = Date.now();
+    }
+    this.gameStartTime = this.matchStartTime;
 
     // Đồng bộ thời gian 5 phút cho Chặng 1 theo phòng (nếu có multiplayer host phát endAt)
     if (this.app && this.app.multiplayer && this.app.multiplayer.gameEndAt && this.app.multiplayer.gameEndAt > Date.now()) {
@@ -892,6 +900,11 @@ class MiniGameEngine {
     this.selectedLocale = null;
     this.activeCipherTab = 'heroes';
 
+    if (!this.matchStartTime) {
+      this.matchStartTime = Date.now();
+    }
+    this.gameStartTime = this.matchStartTime;
+
     // Phục hồi điểm nếu vào trực tiếp hoặc F5
     if (!this.timelineScore || this.timelineScore === 0) {
       try {
@@ -1190,8 +1203,11 @@ class MiniGameEngine {
     if (transOverlay) transOverlay.style.display = 'none';
 
     // Tính chính xác thời gian hoàn thành
-    const totalSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));
+    const startTime = this.matchStartTime || this.gameStartTime || Date.now();
+    const totalSec = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
     const formattedTime = this.formatTime(totalSec);
+    this.finalFormattedTime = formattedTime;
+    this.finalTimeSeconds = totalSec;
 
     // Tính điểm thưởng tốc độ (Speed Bonus)
     let speedBonus = 50;
@@ -1225,7 +1241,5 @@ class MiniGameEngine {
       timeSeconds: totalSec,
       formattedTime: formattedTime
     });
-
-    this.gameStartTime = null;
   }
 }

@@ -970,15 +970,49 @@ class HistoricalQuizApp {
 
   // Xử lý khi nhận GAME_OVER từ Host (điện thoại người chơi)
   onGameOverReceived(leaderboard) {
-    // Người chơi trên điện thoại tự lưu kết quả và hiện màn tổng kết
+    // Nếu người chơi đã hoàn thành và đang ở màn summary thì tuyệt đối giữ nguyên không ghi đè!
+    if (this.currentScreen === 'summary-screen') {
+      return;
+    }
+
     if (this.miniGame) {
       this.miniGame.clearSpeedTimer && this.miniGame.clearSpeedTimer();
       this.miniGame.stopStopwatch && this.miniGame.stopStopwatch();
     }
     soundEngine.playFanfare();
-    // Hiện màn summary cá nhân cho điện thoại người chơi
-    const scoreNow = this.score || 0;
-    this.showSummary({ score: scoreNow, formattedTime: this.miniGame ? this.miniGame.getFormattedTime() : '00:00', timeSeconds: 0, speedBonus: 0 });
+
+    // Tìm thông tin của mình trong danh sách kết quả nhận từ Host
+    const myId = this.multiplayer?.playerId;
+    const myResult = (Array.isArray(leaderboard) ? leaderboard.find(p => p.id === myId) : null) 
+      || this.multiplayer?.players.find(p => p.id === myId);
+
+    const scoreNow = myResult?.score || this.miniGame?.timelineScore || this.score || 0;
+    
+    let timeNow = (myResult?.formattedTime && myResult.formattedTime !== '--:--' && myResult.formattedTime !== '00:00')
+      ? myResult.formattedTime
+      : null;
+
+    if (!timeNow && this.miniGame?.finalFormattedTime && this.miniGame.finalFormattedTime !== '00:00') {
+      timeNow = this.miniGame.finalFormattedTime;
+    }
+    if (!timeNow && this.miniGame && typeof this.miniGame.getFormattedTime === 'function' && this.miniGame.getFormattedTime() !== '00:00') {
+      timeNow = this.miniGame.getFormattedTime();
+    }
+    if (!timeNow && this.lastFormattedTime && this.lastFormattedTime !== '00:00' && this.lastFormattedTime !== '--:--') {
+      timeNow = this.lastFormattedTime;
+    }
+    if (!timeNow) {
+      timeNow = '05:00';
+    }
+
+    const totalSec = myResult?.timeSeconds || this.miniGame?.finalTimeSeconds || (this.miniGame?.matchStartTime ? Math.max(1, Math.floor((Date.now() - this.miniGame.matchStartTime) / 1000)) : 300);
+
+    this.showSummary({
+      score: scoreNow,
+      formattedTime: timeNow,
+      timeSeconds: totalSec,
+      speedBonus: 100
+    });
   }
 
   // Đồng hồ đếm ngược nhỏ trên màn hình điện thoại người chơi (hiển thị ở HUD)
@@ -1197,11 +1231,54 @@ class HistoricalQuizApp {
     soundEngine.playFanfare();
     this.switchScreen('summary-screen');
 
-    const finalScore = summaryData.score !== undefined ? summaryData.score : this.score;
-    const formattedTime = summaryData.formattedTime || '01:30';
-    const totalSec = summaryData.timeSeconds || 90;
-    const speedBonus = summaryData.speedBonus !== undefined ? summaryData.speedBonus : 150;
+    const myId = this.multiplayer?.playerId;
+    const roomMe = this.multiplayer?.players.find(p => p.id === myId);
+    const finMe = this.multiplayer?.finishedPlayers.find(p => p.id === myId);
+
+    let finalScore = summaryData.score !== undefined ? summaryData.score : this.score;
+    if ((!finalScore || finalScore === 0) && roomMe && roomMe.score) {
+      finalScore = roomMe.score;
+    }
+    if ((!finalScore || finalScore === 0) && this.miniGame?.timelineScore) {
+      finalScore = this.miniGame.timelineScore;
+    }
+
+    let formattedTime = summaryData.formattedTime;
+    let totalSec = summaryData.timeSeconds;
+
+    // Sửa lỗi: Nếu formattedTime bị '00:00' hoặc không hợp lệ -> lấy từ kết quả thực tế
+    if (!formattedTime || formattedTime === '00:00' || formattedTime === '--:--') {
+      if (finMe && finMe.formattedTime && finMe.formattedTime !== '--:--' && finMe.formattedTime !== '00:00') {
+        formattedTime = finMe.formattedTime;
+        totalSec = finMe.timeSeconds;
+      } else if (roomMe && roomMe.formattedTime && roomMe.formattedTime !== '--:--' && roomMe.formattedTime !== '00:00') {
+        formattedTime = roomMe.formattedTime;
+        totalSec = roomMe.timeSeconds;
+      } else if (this.miniGame?.finalFormattedTime && this.miniGame.finalFormattedTime !== '00:00') {
+        formattedTime = this.miniGame.finalFormattedTime;
+        totalSec = this.miniGame.finalTimeSeconds;
+      } else if (this.lastFormattedTime && this.lastFormattedTime !== '00:00' && this.lastFormattedTime !== '--:--') {
+        formattedTime = this.lastFormattedTime;
+      } else if (this.miniGame && typeof this.miniGame.getFormattedTime === 'function' && this.miniGame.getFormattedTime() !== '00:00') {
+        formattedTime = this.miniGame.getFormattedTime();
+      } else if (this.multiplayer?.joinedAt) {
+        totalSec = Math.max(1, Math.floor((Date.now() - this.multiplayer.joinedAt) / 1000));
+        formattedTime = this.formatSeconds(totalSec);
+      } else {
+        formattedTime = '05:00';
+      }
+    }
     this.lastFormattedTime = formattedTime;
+
+    let speedBonus = summaryData.speedBonus !== undefined ? summaryData.speedBonus : 0;
+    if (speedBonus === 0 && totalSec && totalSec > 0) {
+      if (totalSec <= 60) speedBonus = 600;
+      else if (totalSec <= 90) speedBonus = 450;
+      else if (totalSec <= 120) speedBonus = 300;
+      else if (totalSec <= 180) speedBonus = 150;
+      else if (totalSec <= 300) speedBonus = 100;
+      else speedBonus = 50;
+    }
 
     const scoreEl = document.getElementById('final-score-val');
     const timeEl = document.getElementById('final-time-val');
