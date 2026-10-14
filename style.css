@@ -572,6 +572,176 @@ body {
   border-radius: 10px;
 }
 
+/* ================= 1.5. MÀN HÌNH ĐĂNG KÝ ĐẠI BIỂU (JOIN SCREEN) ================= */
+.join-modal-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 6, 5, 0.84);
+  backdrop-filter: blur(14px);
+  padding: 16px;
+}
+
+.join-card {
+  width: 520px;
+  max-width: 95vw;
+  background: linear-gradient(145deg, rgba(35, 24, 20, 0.96) 0%, rgba(18, 12, 10, 0.98) 100%);
+  border: 2px solid var(--gold-primary);
+  border-radius: 18px;
+  padding: 24px 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(245, 158, 11, 0.3);
+  display: flex;
+  flex-direction: column;
+  animation: fadeInPlayer 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.join-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.join-emblem {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+}
+
+.join-sub {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.join-title {
+  font-family: var(--font-heading);
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.join-room-badge {
+  margin-left: auto;
+  background: rgba(183, 28, 28, 0.6);
+  border: 1px solid #ff7043;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.join-room-badge strong {
+  color: var(--gold-glow);
+  font-family: var(--font-heading);
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.form-group input {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(212, 175, 55, 0.45);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.form-group input:focus {
+  border-color: var(--gold-glow);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 8px rgba(255, 215, 0, 0.2);
+  background: rgba(20, 15, 12, 0.8);
+}
+
+.avatar-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.avatar-opt {
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  font-size: 1.6rem;
+  padding: 8px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.avatar-opt:hover {
+  transform: translateY(-2px) scale(1.08);
+  border-color: var(--gold-glow);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+.avatar-opt.selected {
+  border-color: #ffeb3b;
+  background: rgba(183, 28, 28, 0.6);
+  box-shadow: 0 0 20px #ffeb3b, inset 0 0 10px rgba(255, 235, 59, 0.4);
+  transform: scale(1.12);
+}
+
+.join-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.join-actions button {
+  flex: 1;
+}
+
+/* Nút Nhập mã phòng trên Start Screen */
+.btn-pill-join {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.25) 0%, rgba(21, 101, 192, 0.4) 100%) !important;
+  border: 1px solid #64b5f6 !important;
+  color: #e3f2fd !important;
+  box-shadow: 0 0 12px rgba(33, 150, 243, 0.3) !important;
+}
+
+.btn-pill-join:hover {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.45) 0%, rgba(21, 101, 192, 0.65) 100%) !important;
+  border-color: #90caf9 !important;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.6) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
 /* ================= 2. MULTIPLAYER LOBBY SCREEN ================= */
 .lobby-modal-wrapper {
   width: 100%;
@@ -694,6 +864,58 @@ body {
   text-overflow: ellipsis;
 }
 
+.player-card {
+  background: rgba(35, 25, 22, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeInPlayer 0.3s ease;
+  transition: all 0.25s ease;
+}
+
+.player-card.is-me {
+  border-color: #4caf50;
+  background: rgba(25, 55, 30, 0.85);
+  box-shadow: 0 0 14px rgba(76, 175, 80, 0.35);
+}
+
+.player-card.is-host {
+  border-color: #ff9800;
+  background: rgba(60, 35, 15, 0.85);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.you-tag {
+  color: #81c784;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.host-tag {
+  background: #e65100;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.player-status {
+  font-size: 0.75rem;
+  color: var(--parchment-dim);
+}
+
 .lobby-qr-info {
   display: flex;
   flex-direction: column;
@@ -708,7 +930,7 @@ body {
 .big-qr-box {
   width: 170px;
   height: 170px;
-  background: #fff;
+  background: #f6c85f;
   border-radius: 12px;
   padding: 8px;
   margin-bottom: 0;
@@ -726,12 +948,80 @@ body {
   box-shadow: 0 0 35px rgba(255, 193, 7, 0.7);
 }
 
-.big-qr-box img {
-  width: 100%;
-  height: 100%;
+.big-qr-box img,
+.big-qr-box canvas {
+  width: 100% !important;
+  height: 100% !important;
   object-fit: contain;
   border-radius: 6px;
   display: block;
+}
+
+.qr-join-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.qr-scan-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+}
+
+.qr-url-display {
+  font-size: 0.72rem;
+  color: var(--parchment-dim);
+  font-family: monospace;
+  word-break: break-all;
+  max-width: 240px;
+}
+
+/* Khung chờ của Client trên điện thoại */
+.lobby-client-wait-card {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 14px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  animation: fadeInPlayer 0.4s ease;
+}
+
+.client-avatar-badge {
+  font-size: 3rem;
+  width: 72px;
+  height: 72px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 2px solid var(--gold-glow);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.client-badge-name {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.client-wait-text {
+  font-size: 0.88rem;
+  color: #c8e6c9;
+  line-height: 1.5;
+}
+
+.lobby-host-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .lobby-footer {
@@ -1878,13 +2168,31 @@ body {
     font-size: 0.8rem;
     padding: 7px 14px;
   }
+  .lobby-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
   .lobby-footer {
     flex-direction: column;
     width: 100%;
     gap: 10px;
+    padding: 14px 16px;
   }
-  .lobby-footer button {
+  .lobby-host-actions {
+    flex-direction: column;
     width: 100%;
+    gap: 8px;
+  }
+  .lobby-footer button,
+  .lobby-host-actions button {
+    width: 100%;
+  }
+  .join-card {
+    padding: 18px 20px;
+    width: 95vw;
   }
 }
 
@@ -1898,6 +2206,21 @@ body {
     padding: 10px;
     border-radius: 14px;
     box-sizing: border-box;
+  }
+  .join-header {
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+  .join-title {
+    font-size: 1.05rem;
+  }
+  .avatar-selector-grid {
+    gap: 6px;
+  }
+  .avatar-opt {
+    font-size: 1.4rem;
+    padding: 6px 0;
   }
   .minigame-header-hud {
     gap: 6px;

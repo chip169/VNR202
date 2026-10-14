@@ -55,13 +55,21 @@ class HistoricalQuizApp {
     this.comboBadge = document.getElementById('combo-badge');
     
     this.miniGame = new MiniGameEngine(this);
+    this.multiplayer = new MultiplayerManager(this);
+    this.selectedAvatar = '⭐';
+    this.selectedRoomCode = '';
+
     this.initParallax();
     this.initLobbySimulation();
     this.bindEvents();
 
-    // Hỗ trợ kiểm thử trực tiếp qua URL query param
+    // Hỗ trợ kiểm thử trực tiếp & Quét mã QR tham gia phòng
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('screen') === 'timeline') {
+    const joinCode = urlParams.get('join') || urlParams.get('room');
+    if (joinCode) {
+      // Khi quét mã QR hoặc mở link có ?join=... -> Vào THẲNG màn hình nhập tên đại biểu!
+      this.openJoinScreen(joinCode);
+    } else if (urlParams.get('screen') === 'timeline') {
       this.miniGame.startTimelineGame();
     } else if (urlParams.get('screen') === 'cipher') {
       this.miniGame.startCipherGame();
@@ -177,10 +185,10 @@ class HistoricalQuizApp {
       playIntroBtn.style.display = (screenId === 'start-screen') ? 'flex' : 'none';
     }
 
-    // Ẩn thanh HUD góc trên khi chơi mini-game để tránh che khuất trên thiết bị di động
+    // Ẩn thanh HUD góc trên khi chơi mini-game hoặc ở màn đăng ký đại biểu / sảnh chờ
     const topHud = document.querySelector('.top-hud-bar');
     if (topHud) {
-      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen') {
+      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen' || screenId === 'join-screen' || screenId === 'lobby-screen') {
         topHud.style.display = 'none';
       } else {
         topHud.style.display = 'flex';
@@ -225,26 +233,91 @@ class HistoricalQuizApp {
       }
     });
 
-    // Nút "VÀO CHƠI TRỰC TUYẾN" chính
+    // 1. Nút "TẠO PHÒNG ĐỐI KHÁNG TRỰC TUYẾN" (Dành cho máy chủ / màn hình chính)
     const playBtn = document.getElementById('btn-main-play');
-    playBtn.addEventListener('click', () => {
-      soundEngine.playClick();
-      soundEngine.startAmbient();
-      this.mode = 'multiplayer';
-      this.openLobby();
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        soundEngine.startAmbient();
+        this.mode = 'multiplayer';
+        this.switchScreen('lobby-screen');
+        this.multiplayer.createRoom('1930-VN');
+      });
+    }
+
+    // 2. Nút "Nhập Mã Phòng Tham Gia" từ Start Screen
+    const openJoinBtn = document.getElementById('btn-open-join-modal');
+    if (openJoinBtn) {
+      openJoinBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.openJoinScreen(null);
+      });
+    }
+
+    // 3. Chọn Avatar Đại Biểu
+    const avatarOpts = document.querySelectorAll('.avatar-opt');
+    avatarOpts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        soundEngine.playClick();
+        avatarOpts.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        this.selectedAvatar = btn.dataset.avatar || '⭐';
+      });
     });
 
-    // Nút Mini-game Mật Thư & Dòng Thời Gian từ Start Screen
+    // 4. Nút Hủy / Quay lại từ màn hình Đăng Ký Đại Biểu
+    const cancelJoinBtn = document.getElementById('btn-cancel-join');
+    if (cancelJoinBtn) {
+      cancelJoinBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.switchScreen('start-screen');
+      });
+    }
+
+    // 5. Submit Form Đăng Ký Đại Biểu (Tham gia phòng)
+    const joinForm = document.getElementById('join-room-form');
+    if (joinForm) {
+      joinForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('input-player-name');
+        const pinInput = document.getElementById('input-room-pin');
+        const playerName = (nameInput ? nameInput.value : '').trim();
+        if (!playerName) {
+          alert('Vui lòng nhập Họ Tên hoặc Biệt danh đại biểu của bạn!');
+          if (nameInput) nameInput.focus();
+          return;
+        }
+
+        let roomCode = this.selectedRoomCode;
+        if (!roomCode && pinInput) {
+          roomCode = (pinInput.value || '').trim().toUpperCase();
+        }
+        if (!roomCode) {
+          alert('Vui lòng nhập Mã phòng!');
+          if (pinInput) pinInput.focus();
+          return;
+        }
+
+        soundEngine.playFanfare();
+        this.mode = 'multiplayer';
+        this.multiplayer.joinRoom(roomCode, playerName, this.selectedAvatar, () => {
+          this.switchScreen('lobby-screen');
+        });
+      });
+    }
+
+    // 6. Nút Mini-game Mật Thư & Dòng Thời Gian từ Start Screen (Chơi đơn)
     const miniGameBtn = document.getElementById('btn-mode-minigame');
     if (miniGameBtn) {
       miniGameBtn.addEventListener('click', () => {
         soundEngine.playClick();
         soundEngine.startAmbient();
+        this.mode = 'single';
         this.miniGame.startTimelineGame();
       });
     }
 
-    // Nút Chế độ Chiến Dịch (100 câu trắc nghiệm)
+    // 7. Nút Chế độ Chiến Dịch (100 câu trắc nghiệm - Chơi đơn)
     const campaignBtn = document.getElementById('btn-mode-campaign');
     if (campaignBtn) {
       campaignBtn.addEventListener('click', () => {
@@ -255,25 +328,31 @@ class HistoricalQuizApp {
       });
     }
 
-    // Nút Bắt đầu Mini-Game từ Sảnh Chờ
+    // 8. Nút Bắt đầu Mini-Game từ Sảnh Chờ (Chủ tọa phát lệnh)
     const startBattleBtn = document.getElementById('btn-start-lobby-game');
     if (startBattleBtn) {
       startBattleBtn.addEventListener('click', () => {
         soundEngine.playClick();
+        if (this.multiplayer.isHost) {
+          this.multiplayer.broadcastStartGame('minigame');
+        }
         this.miniGame.startTimelineGame();
       });
     }
 
-    // Nút Bắt đầu Đấu Trắc Nghiệm từ Sảnh Chờ
+    // 9. Nút Bắt đầu Đấu Trắc Nghiệm từ Sảnh Chờ (Chủ tọa phát lệnh)
     const lobbyQuizBtn = document.getElementById('btn-lobby-start-quiz');
     if (lobbyQuizBtn) {
       lobbyQuizBtn.addEventListener('click', () => {
         soundEngine.playClick();
+        if (this.multiplayer.isHost) {
+          this.multiplayer.broadcastStartGame('quiz');
+        }
         this.startQuizBattle();
       });
     }
 
-    // Nút Thoát Mini-Game quay về Màn hình chính
+    // 10. Nút Thoát Mini-Game quay về Màn hình chính
     const tlBack = document.getElementById('btn-timeline-back');
     if (tlBack) {
       tlBack.addEventListener('click', () => {
@@ -289,16 +368,17 @@ class HistoricalQuizApp {
       });
     }
 
-    // Nút Quay lại màn hình chính từ Sảnh chờ
+    // 11. Nút Rời phòng từ Sảnh chờ
     const backBtn = document.getElementById('btn-lobby-back');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
         soundEngine.playClick();
+        this.multiplayer.leaveRoom();
         this.switchScreen('start-screen');
       });
     }
 
-    // Nút Chơi lại từ Màn hình Vinh danh
+    // 12. Nút Chơi lại từ Màn hình Vinh danh
     const replayBtn = document.getElementById('btn-replay-game');
     if (replayBtn) {
       replayBtn.addEventListener('click', () => {
@@ -323,24 +403,28 @@ class HistoricalQuizApp {
     });
   }
 
-  // Mở sảnh chờ đối kháng
-  openLobby() {
-    this.switchScreen('lobby-screen');
-    const container = document.getElementById('lobby-players-grid');
-    container.innerHTML = `
-      <div class="player-chip is-you">
-        <span class="player-avatar">⭐</span>
-        <span class="player-name">Bạn (Đại Biểu 1930)</span>
-      </div>
-    `;
+  // Mở màn hình Đăng Ký Đại Biểu (khi quét mã QR hoặc bấm Nhập mã phòng)
+  openJoinScreen(prefillCode) {
+    this.switchScreen('join-screen');
+    const pinGroup = document.getElementById('group-room-pin');
+    const pinDisplay = document.getElementById('join-room-code-display');
+    const pinInput = document.getElementById('input-room-pin');
+    const nameInput = document.getElementById('input-player-name');
 
-    // Chỉ người chơi thực tế, không có bot ảo
-    this.playerList = [
-      { name: "Bạn (Đại Biểu 1930)", avatar: "⭐", score: 0, isPlayer: true }
-    ];
+    if (prefillCode) {
+      this.selectedRoomCode = prefillCode.trim().toUpperCase();
+      if (pinGroup) pinGroup.style.display = 'none';
+      if (pinDisplay) pinDisplay.innerText = `#${this.selectedRoomCode}`;
+    } else {
+      this.selectedRoomCode = '';
+      if (pinGroup) pinGroup.style.display = 'block';
+      if (pinDisplay) pinDisplay.innerText = 'NHẬP MÃ BÊN DƯỚI';
+    }
 
-    const readyCount = document.getElementById('lobby-ready-count');
-    if (readyCount) readyCount.innerText = '1 đại biểu';
+    if (nameInput) {
+      nameInput.value = '';
+      setTimeout(() => nameInput.focus(), 300);
+    }
   }
 
   // Khởi động vòng thi đấu
@@ -473,9 +557,9 @@ class HistoricalQuizApp {
       buttons[q.correctIndex].classList.add('correct');
     }
 
-    // Cập nhật điểm người chơi trong danh sách đối kháng
-    const me = this.playerList.find(p => p.isPlayer);
-    if (me) me.score = this.score;
+    if (this.multiplayer) {
+      this.multiplayer.sendScoreUpdate(this.score);
+    }
 
     this.updateHUD();
 
@@ -555,6 +639,6 @@ class HistoricalQuizApp {
 
 // Khởi chạy khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded', () => {
-  new HistoricalQuizApp();
+  window.quizApp = new HistoricalQuizApp();
   new ParticleAtmosphere('fx-canvas');
 });

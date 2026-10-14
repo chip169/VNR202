@@ -204,6 +204,9 @@ class MiniGameEngine {
       soundEngine.playCorrect();
       this.timelineScore += 150;
       document.getElementById('timeline-score-val').innerText = `${this.timelineScore}đ`;
+      if (this.app && this.app.multiplayer) {
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+      }
 
       const targetDropZone = slotBox.querySelector('.slot-drop-target');
       targetDropZone.innerHTML = '';
@@ -356,6 +359,9 @@ class MiniGameEngine {
       soundEngine.playCorrect();
       this.decodedReports.push(matchedRepId);
       this.timelineScore += 250;
+      if (this.app && this.app.multiplayer) {
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+      }
 
       // Highlight các thẻ đúng
       document.querySelectorAll(`[data-rep-id="${matchedRepId}"]`).forEach(el => {

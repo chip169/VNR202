@@ -74,25 +74,84 @@
       <div class="start-screen-overlay-zone">
         <!-- Khung điều khiển trung tâm dưới chân trang -->
         <div class="start-controls-panel">
-          <button class="btn-art-play-trigger" id="btn-main-play" title="Nhấn để Vào chơi trực tuyến">
+          <button class="btn-art-play-trigger" id="btn-main-play" title="Tạo phòng chiếu lên máy tính / máy chiếu">
             <div class="btn-fire-glow-border"></div>
             <span class="btn-spark-particle spark-1">✦</span>
-            <span class="btn-trigger-text">⚡ VÀO CHƠI TRỰC TUYẾN</span>
+            <span class="btn-trigger-text">🏛️ TẠO PHÒNG ĐỐI KHÁNG TRỰC TUYẾN</span>
             <span class="btn-spark-particle spark-2">✦</span>
           </button>
 
-          <!-- 2 Nút Chế độ phụ bố trí ngang gọn gàng, thoáng đãng -->
+          <!-- 3 Nút Chế độ phụ bố trí ngang gọn gàng, thoáng đãng -->
           <div class="start-sub-modes-row">
-            <button class="btn-sub-pill btn-pill-minigame" id="btn-mode-minigame" title="Chơi Mini-game Mật Thư & Dòng Thời Gian">
-              🧩 Mini-Game: Mật Thư & Dòng Thời Gian
+            <button class="btn-sub-pill btn-pill-join" id="btn-open-join-modal" title="Nhập mã phòng để tham gia hội nghị">
+              📱 Nhập Mã Phòng Tham Gia
             </button>
-            <button class="btn-sub-pill btn-pill-quiz" id="btn-mode-campaign" title="Làm bài Trắc nghiệm 100 Câu">
-              📖 Đấu Trắc Nghiệm 100 Câu
+            <button class="btn-sub-pill btn-pill-minigame" id="btn-mode-minigame" title="Chơi Đơn Mini-game Mật Thư & Dòng Thời Gian">
+              🧩 Chơi Đơn: Mini-Game
+            </button>
+            <button class="btn-sub-pill btn-pill-quiz" id="btn-mode-campaign" title="Chơi Đơn Trắc nghiệm 100 Câu">
+              📖 Chơi Đơn: 100 Câu
             </button>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- ================= 1.5. MÀN HÌNH ĐĂNG KÝ ĐẠI BIỂU (JOIN SCREEN CHO ĐIỆN THOẠI QUÉT QR) ================= -->
+    <section id="join-screen" class="screen">
+      <div class="join-modal-wrapper">
+        <div class="join-card">
+          <div class="join-header">
+            <span class="join-emblem">🏛️</span>
+            <div>
+              <div class="join-sub">HỘI NGHỊ THÀNH LẬP ĐẢNG 1930</div>
+              <h2 class="join-title">ĐĂNG KÝ ĐẠI BIỂU THAM GIA</h2>
+            </div>
+            <div class="join-room-badge" id="join-room-badge">
+              <span>MÃ PHÒNG:</span>
+              <strong id="join-room-code-display">#1930-VN</strong>
+            </div>
+          </div>
+
+          <form id="join-room-form" class="join-form" onsubmit="return false;">
+            <!-- Ô nhập mã phòng (chỉ hiện khi người chơi vào từ nút Nhập mã phòng, ẩn khi quét QR) -->
+            <div class="form-group" id="group-room-pin" style="display: none;">
+              <label for="input-room-pin">MÃ PHÒNG HỘI NGHỊ:</label>
+              <input type="text" id="input-room-pin" placeholder="VD: 1930-VN" maxlength="15" autocomplete="off">
+            </div>
+
+            <!-- Ô nhập Họ Tên / Biệt danh -->
+            <div class="form-group">
+              <label for="input-player-name">HỌ TÊN / BIỆT DANH ĐẠI BIỂU:</label>
+              <input type="text" id="input-player-name" placeholder="Ví dụ: Nguyễn Văn A..." maxlength="25" required autocomplete="name">
+            </div>
+
+            <!-- Chọn Huy hiệu Lịch sử đại diện -->
+            <div class="form-group">
+              <label>CHỌN HUY HIỆU ĐẠI BIỂU:</label>
+              <div class="avatar-selector-grid" id="avatar-selector">
+                <button type="button" class="avatar-opt selected" data-avatar="⭐" title="Ngôi Sao Tiên Phong">⭐</button>
+                <button type="button" class="avatar-opt" data-avatar="🚢" title="Hải Trình Văn Ba">🚢</button>
+                <button type="button" class="avatar-opt" data-avatar="📜" title="Chiến Sĩ Luận Cương">📜</button>
+                <button type="button" class="avatar-opt" data-avatar="⚒️" title="Vô Sản Công Nông">⚒️</button>
+                <button type="button" class="avatar-opt" data-avatar="⚡" title="Tiếng Bom Sa Diện">⚡</button>
+                <button type="button" class="avatar-opt" data-avatar="🚩" title="Hồng Kỳ Cách Mạng">🚩</button>
+              </div>
+            </div>
+
+            <!-- Nút hành động -->
+            <div class="join-actions">
+              <button type="submit" id="btn-submit-join" class="btn-primary-start">
+                <span>🚀 VÀO PHÒNG HỘI NGHỊ</span>
+              </button>
+              <button type="button" id="btn-cancel-join" class="btn-secondary">
+                <span>⬅ Quay Lại</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
 
     <!-- ================= 2. SẢNH CHỜ TRỰC TUYẾN (MULTIPLAYER LOBBY) ================= -->
     <section id="lobby-screen" class="screen">
@@ -102,7 +161,7 @@
             <h2 class="lobby-title-h2">🏛️ SẢNH CHỜ ĐỐI KHÁNG TRỰC TUYẾN</h2>
             <div class="room-pin-badge">
               <span>MÃ PHÒNG:</span>
-              <strong>#1930-VN</strong>
+              <strong id="lobby-room-code-val">#1930-VN</strong>
             </div>
           </div>
 
@@ -114,22 +173,36 @@
                 <span id="lobby-ready-count">1 đại biểu</span>
               </div>
               <div class="players-grid" id="lobby-players-grid">
-                <!-- Chèn động người chơi -->
+                <!-- Chèn động người chơi qua multiplayer.js -->
               </div>
             </div>
 
-            <!-- Thẻ hướng dẫn quét QR kết nối -->
-            <div class="lobby-qr-info">
-              <a href="https://vnr202-blue.vercel.app/" target="_blank" rel="noopener noreferrer" class="big-qr-box" title="Quét mã hoặc nhấn để mở https://vnr202-blue.vercel.app/">
-                <img src="assets/qr_code.png" alt="Mã QR https://vnr202-blue.vercel.app/">
-              </a>
+            <!-- Khung Host: Hướng dẫn quét mã QR kết nối (Chỉ hiện trên máy chủ) -->
+            <div class="lobby-qr-info" id="lobby-host-qr-box">
+              <div id="dynamic-qr-box" class="big-qr-box" title="Quét mã để tham gia ngay"></div>
+              <div class="qr-join-hint">
+                <span class="qr-scan-title">📱 Quét mã bằng Camera điện thoại để tham gia</span>
+                <small class="qr-url-display" id="qr-join-url-text">https://vnr202-blue.vercel.app/?join=1930-VN</small>
+              </div>
+            </div>
+
+            <!-- Khung Client: Chờ chủ tọa bắt đầu (Chỉ hiện trên điện thoại người tham gia) -->
+            <div class="lobby-client-wait-card" id="lobby-client-wait-box" style="display: none;">
+              <div class="client-avatar-badge" id="client-my-avatar">⭐</div>
+              <h3 id="client-my-name" class="client-badge-name">Đại biểu Nguyễn Văn A</h3>
+              <p class="client-wait-text">
+                ✅ <strong>Đã vào phòng hội nghị thành công!</strong><br>
+                Vui lòng nhìn lên màn hình máy chủ và chờ Chủ tọa khai mạc phiên họp.
+              </p>
             </div>
           </div>
 
           <div class="lobby-footer">
-            <button class="btn-secondary" id="btn-lobby-back">⬅ Quay Lại</button>
-            <button class="btn-secondary-mode" id="btn-lobby-start-quiz">📖 Đấu Trắc Nghiệm</button>
-            <button class="btn-primary-start" id="btn-start-lobby-game">🧩 ĐUA MINI-GAME MẬT THƯ</button>
+            <button class="btn-secondary" id="btn-lobby-back">⬅ Rời Phòng</button>
+            <div class="lobby-host-actions" id="lobby-host-actions">
+              <button class="btn-secondary-mode" id="btn-lobby-start-quiz">📖 Bắt Đầu: Trắc Nghiệm</button>
+              <button class="btn-primary-start" id="btn-start-lobby-game">🧩 BẮT ĐẦU: MINI-GAME</button>
+            </div>
           </div>
         </div>
       </div>
@@ -336,10 +409,13 @@
   </div>
 
   <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="questions.js"></script>
   <script src="sound.js"></script>
   <script src="particles.js"></script>
   <script src="minigames.js"></script>
+  <script src="multiplayer.js"></script>
   <script src="app.js"></script>
 </body>
 
