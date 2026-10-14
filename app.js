@@ -340,15 +340,40 @@ class HistoricalQuizApp {
       }
     });
 
-    // 1. Nút "MÁY CHIẾU: TẠO PHÒNG QR"
+    // 1. Nút "MÁY CHIẾU: TẠO PHÒNG QR" / "Vào chơi"
     const playBtn = document.getElementById('btn-main-play');
     if (playBtn) {
       playBtn.addEventListener('click', () => {
         soundEngine.playClick();
-        soundEngine.startAmbient();
-        this.mode = 'multiplayer';
-        this.switchScreen('lobby-screen');
-        this.multiplayer.createRoom('1930-VN');
+
+        const btnText = playBtn.querySelector('.btn-trigger-text');
+        const origText = btnText ? btnText.innerText : 'Vào chơi';
+        if (btnText) btnText.innerText = 'Đang kiểm tra phòng...';
+        playBtn.disabled = true;
+
+        this.multiplayer.checkCanBecomeHost('1930-VN', (canBecomeHost, hostInfo) => {
+          if (btnText) btnText.innerText = origText;
+          playBtn.disabled = false;
+
+          if (!canBecomeHost) {
+            soundEngine.playWrong();
+            const willJoinAsDelegate = confirm(
+              '⚠️ PHÒNG NÀY ĐÃ CÓ MÁY LÀM CHỦ TỌA!\n\n' +
+              'Hiện tại đã có 1 máy đang làm Chủ Tọa (Màn Chiếu) cho phòng #1930-VN.\n' +
+              'Mỗi phòng chỉ cho phép DUY NHẤT 1 máy làm chủ tọa.\n\n' +
+              'Bạn có muốn tham gia phòng với tư cách ĐẠI BIỂU để thi đấu không?'
+            );
+            if (willJoinAsDelegate) {
+              this.openJoinScreen('1930-VN');
+            }
+            return;
+          }
+
+          soundEngine.startAmbient();
+          this.mode = 'multiplayer';
+          this.switchScreen('lobby-screen');
+          this.multiplayer.createRoom('1930-VN');
+        });
       });
     }
 

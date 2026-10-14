@@ -11,19 +11,18 @@ class MultiplayerManager {
     this.createdAsHost = false;
     this.roomId = '1930-VN';
     
-    // Lưu giữ và tái sử dụng playerId, tên, avatar qua localStorage/sessionStorage
+    // Lưu giữ và tái sử dụng playerId theo từng tab (sessionStorage) để tránh đụng độ giữa các tab trên cùng máy
     let persistentId = null;
     let savedName = null;
     let savedAvatar = null;
     try {
-      persistentId = localStorage.getItem('vnr202_player_id') || sessionStorage.getItem('vnr202_player_id');
+      persistentId = sessionStorage.getItem('vnr202_player_id');
       savedName = localStorage.getItem('vnr202_player_name') || sessionStorage.getItem('vnr202_player_name');
       savedAvatar = localStorage.getItem('vnr202_player_avatar') || sessionStorage.getItem('vnr202_player_avatar');
     } catch (e) {}
     if (!persistentId) {
-      persistentId = 'p_' + Math.random().toString(36).substring(2, 9);
+      persistentId = 'p_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36).slice(-4);
       try {
-        localStorage.setItem('vnr202_player_id', persistentId);
         sessionStorage.setItem('vnr202_player_id', persistentId);
       } catch (e) {}
     }
@@ -39,6 +38,19 @@ class MultiplayerManager {
     this.qrInstance = null;
     this.isGameStarted = false;
     this.currentStage = 'timeline';
+
+    // Cơ chế khóa duy nhất 1 máy làm Chủ Tọa (Single-Host Lock)
+    this.hostProbeListeners = [];
+    this.lastKnownHost = null;
+
+    window.addEventListener('beforeunload', () => {
+      if (this.isHost && this.isConnected) {
+        this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+          type: 'HOST_LEAVE',
+          hostId: this.playerId
+        });
+      }
+    });
   }
 
   // Lấy bản ghi thông tin đại biểu của máy hiện tại
@@ -147,6 +159,81 @@ class MultiplayerManager {
       console.log('Đã đăng ký lắng nghe topic phòng:', topic);
     } catch (e) {
       console.warn('Lỗi subscribe topic:', e);
+    }
+  }
+
+  // Đăng ký và gỡ bỏ listener thăm dò quyền Host
+  addHostProbeListener(fn) {
+    this.hostProbeListeners.push(fn);
+  }
+
+  removeHostProbeListener(fn) {
+    this.hostProbeListeners = this.hostProbeListeners.filter(f => f !== fn);
+  }
+
+  // Kiểm tra xem phòng đã có máy làm Chủ Tọa chưa (Chỉ duy nhất 1 máy được làm Chủ Tọa)
+  checkCanBecomeHost(roomId, callback) {
+    const targetRoom = (roomId || this.roomId || '1930-VN').trim().toUpperCase();
+    this.roomId = targetRoom;
+
+    // 1. Kiểm tra cache người chơi: nếu vừa thấy Host khác online trong vòng 8s
+    const now = Date.now();
+    if (this.lastKnownHost && (now - (this.lastKnownHost.lastSeen || 0)) < 8000 && this.lastKnownHost.id !== this.playerId) {
+      console.log('⛔ Phát hiện Host trong cache gần đây:', this.lastKnownHost);
+      if (callback) callback(false, this.lastKnownHost);
+      return;
+    }
+
+    const existingHost = this.players.find(p => p.isHost && p.id !== this.playerId && (now - (p.lastSeen || 0)) < 8000);
+    if (existingHost) {
+      console.log('⛔ Phát hiện Host trong danh sách phòng:', existingHost);
+      if (callback) callback(false, existingHost);
+      return;
+    }
+
+    // 2. Gửi thăm dò HOST_PROBE qua MQTT để xác thực thời gian thực
+    const sendProbe = () => {
+      let resolved = false;
+      let timer = null;
+
+      const handler = (data) => {
+        if (data.type === 'HOST_OCCUPIED' && data.candidateId === this.playerId) {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            this.removeHostProbeListener(handler);
+            console.log('⛔ Nhận HOST_OCCUPIED từ máy chủ tọa:', data);
+            if (callback) callback(false, data);
+          }
+        }
+      };
+
+      this.addHostProbeListener(handler);
+
+      // Chờ tối đa 600ms, nếu không có Host nào phản hồi -> Được phép làm Host!
+      timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          this.removeHostProbeListener(handler);
+          console.log('✅ Phòng chưa có Chủ Tọa. Được phép làm Chủ Tọa.');
+          if (callback) callback(true, null);
+        }
+      }, 600);
+
+      this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+        type: 'HOST_PROBE',
+        candidateId: this.playerId,
+        timestamp: Date.now()
+      });
+    };
+
+    if (this.isConnected && this.client) {
+      this.ensureSubscription();
+      sendProbe();
+    } else {
+      this.connect(() => {
+        sendProbe();
+      });
     }
   }
 
@@ -348,8 +435,43 @@ class MultiplayerManager {
         case 'PEER_PRESENCE': {
           const peer = data.player;
           if (!peer || peer.id === this.playerId) break;
-          // Bỏ qua nhịp tim từ các máy Chủ Tọa / Máy Chiếu khác
-          if (peer.isHost || (peer.name && peer.name.includes('Chủ Tọa'))) break;
+
+          // Xử lý sự hiện diện từ máy Chủ Tọa (Host)
+          if (peer.isHost || (peer.name && peer.name.includes('Chủ Tọa'))) {
+            this.lastKnownHost = {
+              id: peer.id,
+              name: peer.name,
+              lastSeen: Date.now(),
+              joinedAt: peer.joinedAt || Date.now()
+            };
+
+            // NẾU MÁY MÌNH CŨNG ĐANG NHẬN LÀ HOST -> Xung đột 2 Host!
+            if (this.isHost) {
+              if ((peer.joinedAt || 0) < this.joinedAt) {
+                // Máy kia vào trước -> Máy mình vào sau phải rút lui ngay lập tức!
+                console.warn('⚠️ Đã có một máy Chủ Tọa khác vào trước! Nhường quyền và về Trang Chủ.');
+                this.isHost = false;
+                this.createdAsHost = false;
+                this.stopHeartbeat();
+                if (this.app) {
+                  this.app.clearSession();
+                  if (this.app.currentScreen === 'lobby-screen' || this.app.currentScreen === 'projector-screen') {
+                    this.app.switchScreen('start-screen');
+                    alert(`⚠️ PHÒNG #${this.roomId} ĐÃ CÓ MÁY LÀM CHỦ TỌA!\n\nMỗi phòng chỉ cho phép duy nhất 1 máy làm chủ tọa.\nBạn đã được chuyển về màn hình chính.`);
+                  }
+                }
+                return;
+              } else {
+                // Máy mình vào trước -> Phát lệnh từ chối máy kia
+                this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+                  type: 'HOST_OCCUPIED',
+                  candidateId: peer.id,
+                  hostId: this.playerId
+                });
+              }
+            }
+            break;
+          }
 
           let existing = this.players.find(p => p.id === peer.id);
           if (!existing) {
@@ -363,6 +485,56 @@ class MultiplayerManager {
           }
 
           this.evaluateHost();
+          this.updateLobbyUI();
+          break;
+        }
+
+        // Nhận lệnh thăm dò xem phòng đã có Chủ Tọa chưa
+        case 'HOST_PROBE': {
+          if (this.isHost && data.candidateId !== this.playerId) {
+            console.log('🛡️ Phát hiện máy khác đang thăm dò quyền Host. Phản hồi HOST_OCCUPIED:', data.candidateId);
+            this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+              type: 'HOST_OCCUPIED',
+              candidateId: data.candidateId,
+              hostId: this.playerId,
+              hostName: this.playerName,
+              isGameStarted: this.isGameStarted
+            });
+            this.sendMyPresence();
+          }
+          break;
+        }
+
+        // Nhận cảnh báo phòng đã có Chủ Tọa
+        case 'HOST_OCCUPIED': {
+          this.hostProbeListeners.forEach(fn => {
+            try { fn(data); } catch (e) {}
+          });
+
+          // Nếu chính máy mình đang tự nhận là host nhưng lại bị thông báo có host khác chiếm phòng
+          if (data.candidateId === this.playerId && this.isHost) {
+            console.warn('⚠️ Nhận thông báo HOST_OCCUPIED: Phòng đã có Chủ Tọa khác. Tự động về Trang Chủ.');
+            this.isHost = false;
+            this.createdAsHost = false;
+            this.stopHeartbeat();
+            if (this.app) {
+              this.app.clearSession();
+              if (this.app.currentScreen === 'lobby-screen' || this.app.currentScreen === 'projector-screen') {
+                this.app.switchScreen('start-screen');
+                alert(`⚠️ PHÒNG #${this.roomId} ĐÃ CÓ MÁY LÀM CHỦ TỌA!\n\nMỗi phòng chỉ cho phép duy nhất 1 máy làm chủ tọa.\nBạn đã được chuyển về màn hình chính.`);
+              }
+            }
+          }
+          break;
+        }
+
+        // Khi Chủ Tọa rời phòng
+        case 'HOST_LEAVE': {
+          console.log('🚪 Chủ tọa đã đóng tab / rời phòng:', data.hostId);
+          if (this.lastKnownHost && this.lastKnownHost.id === data.hostId) {
+            this.lastKnownHost = null;
+          }
+          this.players = this.players.filter(p => p.id !== data.hostId);
           this.updateLobbyUI();
           break;
         }
@@ -923,6 +1095,12 @@ class MultiplayerManager {
     }
 
     if (this.isConnected) {
+      if (this.isHost) {
+        this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+          type: 'HOST_LEAVE',
+          hostId: this.playerId
+        });
+      }
       this.publishMessage(`vnr202_game/${this.roomId}/events`, {
         type: 'PLAYER_LEAVE',
         playerId: this.playerId
@@ -932,6 +1110,7 @@ class MultiplayerManager {
       } catch (e) {}
     }
 
+    this.lastKnownHost = null;
     this.persistRoomResults();
     this.createdAsHost = false;
     this.isHost = false;
