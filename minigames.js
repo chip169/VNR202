@@ -325,6 +325,11 @@ class MiniGameEngine {
     this.startMasterCountdown();
 
     this.app.switchScreen('timeline-game-screen');
+    // Ẩn nút rời phòng bên phía người chơi trong chế độ nhiều người
+    if (this.app && this.app.multiplayer && !this.app.multiplayer.isHost) {
+      const tlBack = document.getElementById('btn-timeline-back');
+      if (tlBack) tlBack.style.display = 'none';
+    }
     this.updateHUD();
     this.loadNextQuestion();
   }
@@ -1003,6 +1008,12 @@ class MiniGameEngine {
 
     this.initCipherTabs();
     this.renderCipherColumns();
+
+    // Ẩn nút rời phòng bên phía người chơi trong chế độ nhiều người
+    if (this.app && this.app.multiplayer && !this.app.multiplayer.isHost) {
+      const cpBack = document.getElementById('btn-cipher-back');
+      if (cpBack) cpBack.style.display = 'none';
+    }
   }
 
   initCipherTabs() {

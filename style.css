@@ -893,8 +893,9 @@ html, body {
 }
 
 .lobby-panel {
-  width: 900px;
-  max-width: 95vw;
+  width: 940px;
+  max-width: 96vw;
+  max-height: 94vh;
   background: linear-gradient(135deg, rgba(32, 22, 19, 0.95) 0%, rgba(18, 12, 10, 0.98) 100%);
   border: 2px solid rgba(212, 175, 55, 0.6);
   border-radius: 18px;
@@ -905,17 +906,18 @@ html, body {
 }
 
 .lobby-header {
-  padding: 20px 28px;
+  padding: 16px 28px;
   border-bottom: 1px solid rgba(212, 175, 55, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: rgba(0,0,0,0.3);
+  flex-shrink: 0;
 }
 
 .lobby-title-h2 {
   font-family: var(--font-heading);
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   color: var(--gold-primary);
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -936,9 +938,11 @@ html, body {
 
 .lobby-body {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 24px;
-  padding: 24px 28px;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  padding: 20px 24px;
+  min-height: 0;
+  flex: 1;
 }
 
 .roster-card {
@@ -948,6 +952,10 @@ html, body {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  height: 330px;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .roster-header {
@@ -957,15 +965,35 @@ html, body {
   font-size: 0.9rem;
   color: var(--gold-primary);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .players-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  max-height: 240px;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-primary) rgba(0,0,0,0.3);
+}
+
+.players-grid::-webkit-scrollbar {
+  width: 6px;
+}
+.players-grid::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+.players-grid::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.4);
+  border-radius: 4px;
+}
+.players-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-glow);
 }
 
 .player-chip {
@@ -1043,12 +1071,14 @@ html, body {
   background: rgba(35, 25, 22, 0.85);
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   animation: fadeInPlayer 0.3s ease;
   transition: all 0.25s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .player-card.is-me {
@@ -1067,6 +1097,8 @@ html, body {
   flex-direction: column;
   gap: 2px;
   overflow: hidden;
+  min-width: 0;
+  flex: 1;
 }
 
 .you-tag {
@@ -1089,6 +1121,7 @@ html, body {
 .player-status {
   font-size: 0.75rem;
   color: var(--parchment-dim);
+  white-space: nowrap;
 }
 
 .lobby-qr-info {
@@ -1099,7 +1132,11 @@ html, body {
   text-align: center;
   background: rgba(0,0,0,0.3);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px 20px;
+  height: 330px;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .big-qr-box {
@@ -1497,12 +1534,37 @@ html, body {
   margin-top: 4px;
 }
 
-.player-wait-footer .btn-secondary {
+.wait-connected-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  text-align: center;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 12px 16px;
+  background: rgba(46, 125, 50, 0.25);
+  border: 1.5px solid rgba(76, 175, 80, 0.6);
+  border-radius: 16px;
+  color: #a5d6a7;
   font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.25);
+}
+
+.status-pulse-ring {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #00e676;
+  box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7);
+  animation: pulseRing 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
 }
 
 /* ================= 3. BATTLE ARENA SCREEN ================= */
