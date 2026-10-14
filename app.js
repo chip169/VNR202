@@ -785,7 +785,7 @@ class HistoricalQuizApp {
     if (!rowsEl) return;
 
     const lb = this.multiplayer.getRoomLeaderboard();
-    const topN = lb.slice(0, 10);
+    const topN = lb.slice(0, 5); // Hiển thị chuẩn xác TOP 5 người chơi
 
     // Cập nhật số liệu thống kê ở header (chỉ đếm đại biểu thực sự)
     const totalEl = document.getElementById('proj-total-players');
@@ -820,13 +820,27 @@ class HistoricalQuizApp {
       } else if (isOffline) {
         timeText = '🚪 Đã rời';
       } else if (item.score > 0) {
-        timeText = '⏳ đang thi';
+        timeText = item.stage === 'cipher' ? '📻 Chặng 2' : '⏳ đang thi';
       } else {
         timeText = '⏳ chờ...';
       }
 
-      // Progress: nếu đã xong thì 100%, còn thì ước lượng theo điểm
-      const progressPct = item.isFinished ? 100 : Math.min(99, Math.floor((item.score / 2500) * 100));
+      // Tiến độ chuẩn xác: Chặng 1 tối đa 50%, Chặng 2: 50% -> 100%, Hoàn thành: 100%
+      let progressPct = 0;
+      if (item.isFinished) {
+        progressPct = 100;
+      } else if (typeof item.progress === 'number' && item.progress > 0) {
+        progressPct = Math.min(99, item.progress);
+      } else if (item.stage === 'cipher') {
+        const solved = item.ciphersSolved || 0;
+        progressPct = Math.min(99, 50 + solved * 10);
+      } else if (item.score > 0) {
+        const elapsed = this.projectorDuration > 0 && this.projectorEndAt > 0
+          ? Math.max(0, this.projectorDuration - Math.floor(Math.max(0, this.projectorEndAt - Date.now()) / 1000))
+          : 0;
+        const timeRatio = this.projectorDuration > 0 ? (elapsed / this.projectorDuration) : 0;
+        progressPct = Math.min(50, Math.max(5, Math.floor(timeRatio * 50)));
+      }
 
       const statusBadge = item.isFinished
         ? '<span class="plb-done-badge">✓ XONG</span>'
@@ -1168,8 +1182,8 @@ class HistoricalQuizApp {
     let items = [];
 
     if (tabType === 'room') {
-      // Lấy từ phòng thi đấu trực tiếp (Multiplayer)
-      items = this.multiplayer ? this.multiplayer.getRoomLeaderboard() : [];
+      // Lấy từ phòng thi đấu trực tiếp (Multiplayer) - Hiển thị Top 5
+      items = this.multiplayer ? this.multiplayer.getRoomLeaderboard().slice(0, 5) : [];
       if (items.length === 0 && this.score > 0) {
         // Nếu chơi đơn thì hiển thị kết quả thật của người chơi vừa thi đấu
         items = [{

@@ -580,9 +580,17 @@ class MiniGameEngine {
       const cardEl = document.getElementById('speed-event-card');
       if (cardEl) cardEl.classList.add('correct-pulse');
 
-      // Đồng bộ điểm thời gian thực tới phòng máy chiếu qua MQTT và lưu cục bộ
+      // Đồng bộ điểm và tiến độ thực tế tới phòng máy chiếu qua MQTT và lưu cục bộ
+      const stage1Elapsed = Math.min(300, (Date.now() - (this.matchStartTime || this.gameStartTime || Date.now())) / 1000);
+      const timePart = Math.floor((stage1Elapsed / 300) * 35);
+      const qPart = Math.min(15, this.questionIndex * 2);
+      const currentProgress = Math.min(50, Math.max(5, timePart + qPart));
+
       if (this.app && this.app.multiplayer) {
-        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore, {
+          stage: 'timeline',
+          progress: currentProgress
+        });
       }
       this.savePlayerState();
 
@@ -666,11 +674,17 @@ class MiniGameEngine {
     if (revealBox) revealBox.style.display = 'none';
 
     // Tạo ngẫu nhiên 3 phần quà cho 3 rương
-    // Luôn đảm bảo ít nhất 1 rương chứa phần quà ĐỔI ĐIỂM NGẪU NHIÊN
-    const giftTypes = ['swap_score', 'bonus_points', 'double_points', 'freeze_shield'];
-    const chestGifts = ['swap_score'];
+    // Tỷ lệ xuất hiện quà ĐỔI ĐIỂM đúng chuẩn 1:15 (khoảng 6.67%)
+    const normalGifts = ['bonus_points', 'double_points', 'freeze_shield'];
+    const chestGifts = [];
+
+    // Tỷ lệ ra hộp trao đổi điểm là 1:15 (1/15)
+    const hasSwapGift = Math.random() < (1 / 15);
+    if (hasSwapGift) {
+      chestGifts.push('swap_score');
+    }
     while (chestGifts.length < 3) {
-      const g = giftTypes[Math.floor(Math.random() * giftTypes.length)];
+      const g = normalGifts[Math.floor(Math.random() * normalGifts.length)];
       chestGifts.push(g);
     }
     // Shuffle 3 rương
@@ -930,6 +944,15 @@ class MiniGameEngine {
 
     this.startMasterCountdown();
 
+    // Đồng bộ tiến độ bắt đầu Chặng 2 (50%)
+    if (this.app && this.app.multiplayer) {
+      this.app.multiplayer.sendScoreUpdate(this.timelineScore, {
+        stage: 'cipher',
+        progress: 50,
+        ciphersSolved: 0
+      });
+    }
+
     this.initCipherTabs();
     this.renderCipherColumns();
   }
@@ -1146,8 +1169,15 @@ class MiniGameEngine {
       const scoreEl = document.getElementById('cipher-score-val');
       if (scoreEl) scoreEl.innerText = `${this.timelineScore.toLocaleString()}đ`;
 
+      const solvedCount = this.decodedReports.length;
+      // Chặng 2 có 5 bức điện, mỗi bức tăng 10% (từ 50% đến 100%)
+      const cipherProgress = Math.min(100, 50 + solvedCount * 10);
       if (this.app && this.app.multiplayer) {
-        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore, {
+          stage: 'cipher',
+          progress: cipherProgress,
+          ciphersSolved: solvedCount
+        });
       }
       this.savePlayerState();
 

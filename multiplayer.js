@@ -724,6 +724,9 @@ class MultiplayerManager {
             target.lastSeen = Date.now();
             target.isOnline = true;
             target.hasLeft = false;
+            if (typeof data.progress === 'number') target.progress = data.progress;
+            if (data.stage) target.stage = data.stage;
+            if (typeof data.ciphersSolved === 'number') target.ciphersSolved = data.ciphersSolved;
           } else {
             target = {
               id: data.playerId,
@@ -733,7 +736,10 @@ class MultiplayerManager {
               isHost: false,
               lastSeen: Date.now(),
               isOnline: true,
-              hasLeft: false
+              hasLeft: false,
+              progress: typeof data.progress === 'number' ? data.progress : 0,
+              stage: data.stage || 'timeline',
+              ciphersSolved: data.ciphersSolved || 0
             };
             this.players.push(target);
           }
@@ -937,6 +943,7 @@ class MultiplayerManager {
       .filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')))
       .map(p => {
         const fin = this.finishedPlayers.find(f => f.id === p.id);
+        const isFin = !!fin || !!p.isFinished;
         return {
           id: p.id,
           name: p.name,
@@ -944,9 +951,12 @@ class MultiplayerManager {
           score: fin ? fin.score : (p.score || 0),
           timeSeconds: fin ? fin.timeSeconds : (p.timeSeconds || 9999),
           formattedTime: fin ? fin.formattedTime : (p.formattedTime || '--:--'),
-          isFinished: !!fin || !!p.isFinished,
+          isFinished: isFin,
           isOnline: p.isOnline !== false,
-          hasLeft: !!p.hasLeft
+          hasLeft: !!p.hasLeft,
+          stage: p.stage || 'timeline',
+          ciphersSolved: p.ciphersSolved || 0,
+          progress: isFin ? 100 : (typeof p.progress === 'number' ? p.progress : 0)
         };
       });
 
@@ -1007,14 +1017,17 @@ class MultiplayerManager {
     } catch (e) {}
   }
 
-  // Gửi cập nhật điểm số của máy hiện tại
-  sendScoreUpdate(newScore) {
+  // Gửi cập nhật điểm số và tiến độ thực tế của máy hiện tại
+  sendScoreUpdate(newScore, extraData = {}) {
     if (!this.isConnected) return;
     const me = this.players.find(p => p.id === this.playerId);
     if (me) {
       me.score = newScore;
       me.isOnline = true;
       me.hasLeft = false;
+      if (typeof extraData.progress === 'number') me.progress = extraData.progress;
+      if (extraData.stage) me.stage = extraData.stage;
+      if (typeof extraData.ciphersSolved === 'number') me.ciphersSolved = extraData.ciphersSolved;
     }
 
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
@@ -1022,7 +1035,10 @@ class MultiplayerManager {
       playerId: this.playerId,
       name: this.playerName,
       avatar: this.playerAvatar,
-      score: newScore
+      score: newScore,
+      progress: extraData.progress,
+      stage: extraData.stage,
+      ciphersSolved: extraData.ciphersSolved
     });
   }
 
