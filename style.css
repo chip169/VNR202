@@ -2746,10 +2746,7 @@ html, body {
 }
 
 .speed-event-desc {
-  font-size: 0.94rem;
-  color: var(--parchment);
-  line-height: 1.5;
-  margin-bottom: 12px;
+  display: none !important;
 }
 
 .speed-event-hint {
@@ -2846,12 +2843,19 @@ html, body {
   user-select: none;
 }
 
-.speed-year-btn:hover {
-  border-color: var(--gold-glow);
-  background: linear-gradient(135deg, rgba(58, 40, 32, 0.95) 0%, rgba(36, 24, 20, 0.98) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(255, 193, 7, 0.35);
-  color: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .speed-year-btn:hover {
+    border-color: var(--gold-glow);
+    background: linear-gradient(135deg, rgba(58, 40, 32, 0.95) 0%, rgba(36, 24, 20, 0.98) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(255, 193, 7, 0.35);
+    color: #fff;
+  }
+}
+
+.speed-year-btn:focus,
+.speed-year-btn:focus-visible {
+  outline: none !important;
 }
 
 .speed-year-btn:active {
@@ -2994,10 +2998,17 @@ html, body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
-.quiz-opt-btn:hover {
-  border-color: var(--gold-glow);
-  background: rgba(50, 35, 25, 0.95);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .quiz-opt-btn:hover {
+    border-color: var(--gold-glow);
+    background: rgba(50, 35, 25, 0.95);
+    transform: translateY(-2px);
+  }
+}
+
+.quiz-opt-btn:focus,
+.quiz-opt-btn:focus-visible {
+  outline: none !important;
 }
 
 .quiz-opt-btn:active {

@@ -317,6 +317,11 @@ class MiniGameEngine {
     this.clearSpeedTimer();
     this.isSpeedLocked = false;
 
+    // Xóa triệt để mọi trạng thái focus / hover còn sót lại trên nút bấm
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+
     // Đảm bảo hàng đợi luôn có câu hỏi vô tận
     if (this.questionQueue.length < 5) {
       this.refillQuestionQueue();
@@ -366,7 +371,7 @@ class MiniGameEngine {
     }
   }
 
-  // Kết xuất Thẻ Thử Thách Trung Tâm
+  // Kết xuất Thẻ Thử Thách Trung Tâm (Chỉ giữ lại Câu Hỏi)
   renderQuestionCard(item) {
     const cardBadge = document.getElementById('speed-card-badge');
     const cardIcon = document.getElementById('speed-card-icon');
@@ -377,7 +382,7 @@ class MiniGameEngine {
     if (cardBadge) cardBadge.innerText = item.badge || '📜 THỬ THÁCH TRI THỨC';
     if (cardIcon) cardIcon.innerText = item.icon || '⭐';
     if (cardTitle) cardTitle.innerText = item.title;
-    if (cardDesc) cardDesc.innerText = item.desc;
+    if (cardDesc) cardDesc.innerText = ''; // Bỏ hoàn toàn phần chữ thường bên dưới câu hỏi
 
     if (cardEl) {
       cardEl.classList.remove('card-slide-in', 'correct-pulse', 'error-shake');
@@ -523,6 +528,10 @@ class MiniGameEngine {
 
       // Chuyển câu tiếp theo sau 0.75 giây
       setTimeout(() => {
+        document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
+          b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
+          if (typeof b.blur === 'function') b.blur();
+        });
         this.loadNextQuestion();
       }, 750);
     } else {
@@ -563,6 +572,10 @@ class MiniGameEngine {
       if (freezeSeconds <= 0) {
         clearInterval(this.freezeTimer);
         if (overlay) overlay.style.display = 'none';
+        document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
+          b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
+          if (typeof b.blur === 'function') b.blur();
+        });
         // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới để không thể spam lại câu cũ
         this.loadNextQuestion();
       }
@@ -592,6 +605,10 @@ class MiniGameEngine {
     }
 
     setTimeout(() => {
+      document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
+        b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
+        if (typeof b.blur === 'function') b.blur();
+      });
       this.loadNextQuestion();
     }, 1200);
   }
