@@ -582,6 +582,13 @@ class HistoricalQuizApp {
       projBackBtn.addEventListener('click', () => {
         soundEngine.playClick();
         this.stopProjectorMode();
+        if (this.multiplayer) {
+          this.multiplayer.isGameStarted = false;
+          this.multiplayer.players = [this.multiplayer.getMyRecord()];
+          this.multiplayer.finishedPlayers = [];
+          this.multiplayer.updateLobbyUI();
+          this.multiplayer.broadcastRoster();
+        }
         this.switchScreen('lobby-screen');
       });
     }
