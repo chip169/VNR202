@@ -469,6 +469,56 @@ class MultiplayerManager {
           break;
         }
 
+        // Sự kiện hoán đổi điểm ngẫu nhiên giữa 2 người chơi
+        case 'SCORE_SWAP': {
+          console.log('🔄 Nhận sự kiện SCORE_SWAP:', data);
+          soundEngine.playFanfare();
+
+          // Cập nhật điểm trong danh sách người chơi
+          const pInit = this.players.find(p => p.id === data.initiatorId);
+          if (pInit) pInit.score = data.initiatorNewScore;
+          const pTarg = this.players.find(p => p.id === data.targetId);
+          if (pTarg) pTarg.score = data.targetNewScore;
+          this.persistRoomResults();
+
+          // Cập nhật máy chiếu
+          if (this.isHost) {
+            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+              this.app.updateProjectorLeaderboard();
+            }
+            if (this.app && typeof this.app.addProjectorActivity === 'function') {
+              this.app.addProjectorActivity(
+                `🔄 <b>${data.initiatorName}</b> vừa bốc trúng Quà May Mắn đổi điểm với <b>${data.targetName}</b>! (${data.targetOldScore.toLocaleString()}đ ⇄ ${data.initiatorOldScore.toLocaleString()}đ)`,
+                'swap'
+              );
+            }
+          }
+
+          // THÔNG BÁO CHO NGƯỜI BỊ ĐỔI ĐIỂM (TARGET)
+          if (this.playerId === data.targetId) {
+            if (this.app && this.app.miniGame) {
+              this.app.miniGame.timelineScore = data.targetNewScore;
+              this.app.miniGame.updateHUD();
+              this.app.miniGame.savePlayerState();
+            }
+            if (this.app && typeof this.app.showScoreSwapAlert === 'function') {
+              this.app.showScoreSwapAlert({
+                role: 'target',
+                otherName: data.initiatorName,
+                otherAvatar: data.initiatorAvatar,
+                oldScore: data.targetOldScore,
+                newScore: data.targetNewScore
+              });
+            }
+          }
+
+          // THÔNG BÁO TOAST CHO CÁC NGƯỜI CHƠI TRONG PHÒNG
+          if (this.app && typeof this.app.showToastNotification === 'function') {
+            this.app.showToastNotification(`🔄 ${data.initiatorName} vừa đổi điểm với ${data.targetName}!`);
+          }
+          break;
+        }
+
         // Cập nhật điểm số trực tiếp (Live Score)
         case 'SCORE_UPDATE': {
           let target = this.players.find(p => p.id === data.playerId);
@@ -759,6 +809,54 @@ class MultiplayerManager {
       avatar: this.playerAvatar,
       score: newScore
     });
+  }
+
+  // Thực hiện hoán đổi điểm với một người chơi ngẫu nhiên khác trong phòng
+  executeScoreSwap() {
+    const delegates = this.getRealDelegates().filter(p => p.id !== this.playerId);
+    if (!delegates || delegates.length === 0) {
+      return { success: false, reason: 'no_other_players' };
+    }
+
+    // Chọn ngẫu nhiên 1 người chơi khác
+    const target = delegates[Math.floor(Math.random() * delegates.length)];
+    const myCurrentScore = (this.app && this.app.miniGame) ? this.app.miniGame.timelineScore : (this.players.find(p => p.id === this.playerId)?.score || 0);
+    const targetCurrentScore = target.score || 0;
+
+    // Hoán đổi trên máy mình
+    if (this.app && this.app.miniGame) {
+      this.app.miniGame.timelineScore = targetCurrentScore;
+      this.app.miniGame.updateHUD();
+      this.app.miniGame.savePlayerState();
+    }
+    const me = this.players.find(p => p.id === this.playerId);
+    if (me) me.score = targetCurrentScore;
+    target.score = myCurrentScore;
+    this.persistRoomResults();
+
+    // Phát sóng sự kiện SCORE_SWAP qua MQTT tới toàn bộ phòng
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'SCORE_SWAP',
+      initiatorId: this.playerId,
+      initiatorName: this.playerName,
+      initiatorAvatar: this.playerAvatar,
+      targetId: target.id,
+      targetName: target.name,
+      targetAvatar: target.avatar,
+      initiatorOldScore: myCurrentScore,
+      targetOldScore: targetCurrentScore,
+      initiatorNewScore: targetCurrentScore,
+      targetNewScore: myCurrentScore
+    });
+
+    return {
+      success: true,
+      target: target,
+      initiatorOldScore: myCurrentScore,
+      targetOldScore: targetCurrentScore,
+      initiatorNewScore: targetCurrentScore,
+      targetNewScore: myCurrentScore
+    };
   }
 
   // Rời phòng

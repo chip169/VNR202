@@ -159,6 +159,10 @@ class MiniGameEngine {
     this.selectedLocale = null;
     this.decodedReports = [];
 
+    // Mystery Gift Power-ups
+    this.hasShield = false; // Khiên bảo vệ chống đóng băng
+    this.nextQuestionDouble = false; // Nhân đôi điểm câu kế
+
     // Tự động lưu tiến trình và điểm số khi đóng tab/rời trang
     window.addEventListener('beforeunload', () => this.savePlayerState());
     window.addEventListener('pagehide', () => this.savePlayerState());
@@ -545,7 +549,17 @@ class MiniGameEngine {
       // Điểm cơ bản 100đ + Thưởng tốc độ theo thời gian còn lại (tối đa 100đ)
       const timeBonus = Math.floor((this.speedRemainingMs / this.questionTotalMs) * 100);
       const mult = this.getMultiplier();
-      const earned = Math.round((100 + timeBonus) * mult);
+      let earned = Math.round((100 + timeBonus) * mult);
+
+      // Nếu có kích hoạt quà nhân đôi (x2)
+      if (this.nextQuestionDouble) {
+        earned *= 2;
+        this.nextQuestionDouble = false;
+        if (typeof this.app?.showToastNotification === 'function') {
+          this.app.showToastNotification('⚡ Đã kích hoạt x2 Điểm Số!');
+        }
+      }
+
       this.timelineScore += earned;
 
       this.streakCount++;
@@ -566,6 +580,18 @@ class MiniGameEngine {
 
       this.updateHUD();
 
+      // KIỂM TRA MỐC 3 CÂU ĐÚNG LIÊN TIẾP -> MỞ HỘP QUÀ MAY MẮN
+      if (this.streakCount > 0 && this.streakCount % 3 === 0) {
+        setTimeout(() => {
+          document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
+            b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
+            if (typeof b.blur === 'function') b.blur();
+          });
+          this.triggerMysteryGift();
+        }, 600);
+        return;
+      }
+
       // Chuyển câu tiếp theo sau 0.75 giây (Chế độ vô hạn cho đủ 5 phút)
       setTimeout(() => {
         document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
@@ -575,6 +601,28 @@ class MiniGameEngine {
         this.loadNextQuestion();
       }, 750);
     } else {
+      // KIỂM TRA NẾU CÓ KHIÊN BẢO VỆ CHỐNG ĐÓNG BĂNG
+      if (this.hasShield) {
+        this.hasShield = false;
+        soundEngine.playCorrect();
+        btnEl.classList.add('btn-wrong');
+        const cardEl = document.getElementById('speed-event-card');
+        if (cardEl) cardEl.classList.add('correct-pulse');
+
+        if (typeof this.app?.showToastNotification === 'function') {
+          this.app.showToastNotification('🛡️ Khiên bảo vệ: Miễn trừ phạt đóng băng 3 giây!');
+        }
+
+        setTimeout(() => {
+          document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
+            b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
+            if (typeof b.blur === 'function') b.blur();
+          });
+          this.loadNextQuestion();
+        }, 750);
+        return;
+      }
+
       // TRẢ LỜI SAI -> KÍCH HOẠT HÌNH PHẠT ĐÓNG BĂNG 3S (ANTI-SPAM)
       soundEngine.playWrong();
       btnEl.classList.add('btn-wrong', 'error-shake');
@@ -594,6 +642,141 @@ class MiniGameEngine {
       // Kích hoạt bảng đóng băng phạt 3 giây
       this.triggerFreezePenalty(item);
     }
+  }
+
+  // ================= 1.5. HỘP QUÀ MAY MẮN (CHỌN 1 TRONG 3 KHI ĐẠT CHUỖI 3 CÂU ĐÚNG) =================
+  triggerMysteryGift() {
+    this.clearSpeedTimer();
+    const overlay = document.getElementById('mystery-gift-overlay');
+    const chestsGrid = document.getElementById('mystery-chests-grid');
+    const revealBox = document.getElementById('gift-reward-reveal');
+    if (!overlay) return;
+
+    soundEngine.playFanfare();
+    overlay.style.display = 'flex';
+    if (chestsGrid) chestsGrid.style.display = 'grid';
+    if (revealBox) revealBox.style.display = 'none';
+
+    // Tạo ngẫu nhiên 3 phần quà cho 3 rương
+    // Luôn đảm bảo ít nhất 1 rương chứa phần quà ĐỔI ĐIỂM NGẪU NHIÊN
+    const giftTypes = ['swap_score', 'bonus_points', 'double_points', 'freeze_shield'];
+    const chestGifts = ['swap_score'];
+    while (chestGifts.length < 3) {
+      const g = giftTypes[Math.floor(Math.random() * giftTypes.length)];
+      chestGifts.push(g);
+    }
+    // Shuffle 3 rương
+    for (let i = chestGifts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [chestGifts[i], chestGifts[j]] = [chestGifts[j], chestGifts[i]];
+    }
+
+    // Gắn sự kiện click cho từng rương
+    const chestEls = document.querySelectorAll('.mystery-chest-box');
+    chestEls.forEach((box, idx) => {
+      box.classList.remove('opened', 'disabled');
+      box.onclick = () => {
+        chestEls.forEach(b => b.classList.add('disabled'));
+        box.classList.add('opened');
+        this.openMysteryChest(chestGifts[idx], box);
+      };
+    });
+  }
+
+  openMysteryChest(giftType, boxEl) {
+    soundEngine.playFanfare();
+    const chestsGrid = document.getElementById('mystery-chests-grid');
+    const revealBox = document.getElementById('gift-reward-reveal');
+    const iconEl = document.getElementById('gift-reveal-icon');
+    const titleEl = document.getElementById('gift-reveal-title');
+    const descEl = document.getElementById('gift-reveal-desc');
+    const scoresEl = document.getElementById('gift-reveal-scores');
+    const continueBtn = document.getElementById('btn-gift-continue');
+
+    if (chestsGrid) chestsGrid.style.display = 'none';
+    if (revealBox) revealBox.style.display = 'flex';
+
+    if (giftType === 'swap_score') {
+      iconEl.innerText = '🔄';
+      titleEl.innerText = 'BỐC TRÚNG: HOÁN ĐỔI ĐIỂM SỐ!';
+      
+      // Thực hiện hoán đổi điểm với một người chơi ngẫu nhiên
+      const result = this.app.multiplayer ? this.app.multiplayer.executeScoreSwap() : null;
+      if (result && result.success) {
+        descEl.innerHTML = `Bạn vừa tráo đổi điểm số ngoạn mục với đại biểu <strong>${result.target.name}</strong>!`;
+        scoresEl.innerHTML = `
+          <div class="swap-scores-box">
+            <div class="swap-score-col">
+              <span class="swap-col-label">Điểm Trước Của Bạn</span>
+              <strong class="swap-old-val">${result.initiatorOldScore.toLocaleString()}đ</strong>
+            </div>
+            <div class="swap-arrow">⇄</div>
+            <div class="swap-score-col highlight">
+              <span class="swap-col-label">Điểm Mới Nhận</span>
+              <strong class="swap-new-val">${result.initiatorNewScore.toLocaleString()}đ</strong>
+            </div>
+          </div>
+        `;
+      } else {
+        // Nếu chơi solo hoặc chưa có ai khác trong phòng
+        this.timelineScore += 300;
+        this.updateHUD();
+        this.savePlayerState();
+        if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+        descEl.innerHTML = `Hiện tại chưa có đại biểu khác trong phòng để đổi điểm.<br>Trung ương tặng thưởng cho bạn <strong>+300 điểm danh dự</strong>!`;
+        scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ffd700;">+300 ĐIỂM THƯỞNG DANH DỰ</strong>`;
+      }
+    } else if (giftType === 'bonus_points') {
+      iconEl.innerText = '⭐';
+      titleEl.innerText = 'ĐIỆN TÍN KHEN NGỢI TỪ TRUNG ƯƠNG!';
+      this.timelineScore += 300;
+      this.updateHUD();
+      this.savePlayerState();
+      if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+      descEl.innerHTML = `Thành tích xuất sắc! Bạn được cộng ngay <strong>+300 điểm thưởng</strong> vào tổng điểm!`;
+      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ffd700;">+300 ĐIỂM THƯỞNG</strong>`;
+    } else if (giftType === 'double_points') {
+      iconEl.innerText = '⚡';
+      titleEl.innerText = 'KHÍ THẾ TIẾN CÔNG: x2 ĐIỂM CÂU TIẾP!';
+      this.nextQuestionDouble = true;
+      descEl.innerHTML = `Câu hỏi tiếp theo bạn trả lời đúng sẽ được <strong>nhân đôi (x2)</strong> toàn bộ số điểm ghi được!`;
+      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff9800;">⚡ KÍCH HOẠT x2 ĐIỂM CÂU KẾ TIẾP</strong>`;
+    } else if (giftType === 'freeze_shield') {
+      iconEl.innerText = '🛡️';
+      titleEl.innerText = 'LÁ CHẮN BẢO VỆ BÍ MẬT!';
+      this.hasShield = true;
+      descEl.innerHTML = `Bạn nhận được <strong>01 Khiên bảo vệ</strong>: Miễn trừ hoàn toàn hình phạt đóng băng 3 giây nếu chọn sai câu kế tiếp!`;
+      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#4caf50;">🛡️ KHIÊN BẢO VỆ ĐÃ SẴN SÀNG</strong>`;
+    }
+
+    let countdown = 4;
+    let autoTimer = null;
+
+    const cleanupAndNext = () => {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+      const overlay = document.getElementById('mystery-gift-overlay');
+      if (overlay) overlay.style.display = 'none';
+      this.loadNextQuestion();
+    };
+
+    if (continueBtn) {
+      continueBtn.innerText = `TIẾP TỤC THI ĐẤU (${countdown}s) ➔`;
+      continueBtn.onclick = () => {
+        soundEngine.playClick();
+        cleanupAndNext();
+      };
+    }
+
+    autoTimer = setInterval(() => {
+      countdown--;
+      if (continueBtn) continueBtn.innerText = `TIẾP TỤC THI ĐẤU (${countdown}s) ➔`;
+      if (countdown <= 0) {
+        cleanupAndNext();
+      }
+    }, 1000);
   }
 
   // Cơ chế đóng băng phạt 3 giây ngăn chặn triệt để hành vi spam đoán mò

@@ -685,6 +685,83 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= 6. LỚP CHỌN HỘP QUÀ MAY MẮN (3 CÂU ĐÚNG LIÊN TIẾP) ================= -->
+    <div id="mystery-gift-overlay" class="modal-overlay mystery-gift-overlay" style="display: none;">
+      <div class="mystery-gift-card animate-appear">
+        <div class="gift-header">
+          <span class="gift-streak-badge">🔥 CHUỖI 3 CÂU ĐÚNG LIÊN TIẾP!</span>
+          <h2 class="gift-title">CHỌN 1 HỘP QUÀ BÍ ẨN MAY MẮN</h2>
+          <p class="gift-subtitle">Mỗi hộp quà ẩn chứa một phần thưởng ngẫu nhiên đặc biệt hoặc cơ hội hoán đổi điểm số!</p>
+        </div>
+
+        <div class="mystery-chests-grid" id="mystery-chests-grid">
+          <!-- 3 Hộp Quà Bí Ẩn -->
+          <div class="mystery-chest-box" data-chest-index="0" id="chest-box-0">
+            <div class="chest-icon-wrapper">
+              <span class="chest-icon">🎁</span>
+              <div class="chest-glow"></div>
+            </div>
+            <div class="chest-label">HỘP QUÀ SỐ 1</div>
+            <div class="chest-hint">Chạm để mở</div>
+          </div>
+
+          <div class="mystery-chest-box" data-chest-index="1" id="chest-box-1">
+            <div class="chest-icon-wrapper">
+              <span class="chest-icon">🎁</span>
+              <div class="chest-glow"></div>
+            </div>
+            <div class="chest-label">HỘP QUÀ SỐ 2</div>
+            <div class="chest-hint">Chạm để mở</div>
+          </div>
+
+          <div class="mystery-chest-box" data-chest-index="2" id="chest-box-2">
+            <div class="chest-icon-wrapper">
+              <span class="chest-icon">🎁</span>
+              <div class="chest-glow"></div>
+            </div>
+            <div class="chest-label">HỘP QUÀ SỐ 3</div>
+            <div class="chest-hint">Chạm để mở</div>
+          </div>
+        </div>
+
+        <!-- Kết Quả Mở Rương -->
+        <div class="gift-reward-reveal" id="gift-reward-reveal" style="display: none;">
+          <div class="reward-icon" id="gift-reveal-icon">🎲</div>
+          <h3 class="reward-title" id="gift-reveal-title">HOÁN ĐỔI ĐIỂM SỐ NGẪU NHIÊN!</h3>
+          <p class="reward-desc" id="gift-reveal-desc">Bạn vừa hoán đổi điểm số với đại biểu ...</p>
+          <div class="reward-scores-detail" id="gift-reveal-scores"></div>
+          <button type="button" class="btn-primary-start" id="btn-gift-continue">TIẾP TỤC THI ĐẤU (4s) ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 7. THÔNG BÁO HOÁN ĐỔI ĐIỂM DÀNH CHO CẢ 2 BÊN ================= -->
+    <div id="score-swap-alert-overlay" class="modal-overlay score-swap-overlay" style="display: none;">
+      <div class="score-swap-card animate-appear">
+        <div class="swap-alert-badge">⚡ BIẾN ĐỘNG CHIẾN TRƯỜNG!</div>
+        <div class="swap-icon-pulse">🔄</div>
+        <h2 class="swap-title" id="swap-alert-title">HOÁN ĐỔI ĐIỂM SỐ!</h2>
+        <div class="swap-message" id="swap-alert-msg">
+          Đại biểu <strong>Nguyễn Văn A</strong> vừa bốc trúng Quà May Mắn và đổi điểm với bạn!
+        </div>
+        <div class="swap-scores-box" id="swap-scores-box">
+          <div class="swap-score-col">
+            <span class="swap-col-label">Điểm Trước Đó</span>
+            <strong class="swap-old-val" id="swap-old-val">0đ</strong>
+          </div>
+          <div class="swap-arrow">⇄</div>
+          <div class="swap-score-col highlight">
+            <span class="swap-col-label">Điểm Mới Nhận</span>
+            <strong class="swap-new-val" id="swap-new-val">0đ</strong>
+          </div>
+        </div>
+        <button type="button" class="btn-primary-start" id="btn-close-swap-alert">ĐÃ RÕ - TIẾP TỤC CHIẾN ĐẤU</button>
+      </div>
+    </div>
+
+    <!-- Container Toast thông báo nổi góc trên -->
+    <div id="global-toast-container" class="global-toast-container"></div>
   </div>
 
   <!-- Scripts -->

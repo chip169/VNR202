@@ -834,6 +834,65 @@ class HistoricalQuizApp {
     while (feedEl.children.length > 8) feedEl.removeChild(feedEl.lastChild);
   }
 
+  // Hiển thị thông báo khi có sự kiện đổi điểm (Dành cho cả 2 bên)
+  showScoreSwapAlert(swapData) {
+    soundEngine.playFanfare();
+    const overlay = document.getElementById('score-swap-alert-overlay');
+    const titleEl = document.getElementById('swap-alert-title');
+    const msgEl = document.getElementById('swap-alert-msg');
+    const oldValEl = document.getElementById('swap-old-val');
+    const newValEl = document.getElementById('swap-new-val');
+    const closeBtn = document.getElementById('btn-close-swap-alert');
+
+    if (!overlay) return;
+
+    if (swapData.role === 'target') {
+      if (titleEl) titleEl.innerText = '⚡ BỊ HOÁN ĐỔI ĐIỂM SỐ!';
+      if (msgEl) {
+        msgEl.innerHTML = `Đại biểu <strong>${swapData.otherAvatar || '⭐'} ${swapData.otherName}</strong> vừa trả lời đúng 3 câu liên tiếp, mở Hộp Quà May Mắn và <strong>HOÁN ĐỔI ĐIỂM SỐ</strong> với bạn!`;
+      }
+    } else {
+      if (titleEl) titleEl.innerText = '🔄 HOÁN ĐỔI ĐIỂM THÀNH CÔNG!';
+      if (msgEl) {
+        msgEl.innerHTML = `Bạn vừa mở Hộp Quà May Mắn và hoán đổi điểm thành công với <strong>${swapData.otherAvatar || '⭐'} ${swapData.otherName}</strong>!`;
+      }
+    }
+
+    if (oldValEl) oldValEl.innerText = `${(swapData.oldScore || 0).toLocaleString()}đ`;
+    if (newValEl) newValEl.innerText = `${(swapData.newScore || 0).toLocaleString()}đ`;
+
+    overlay.style.display = 'flex';
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        soundEngine.playClick();
+        overlay.style.display = 'none';
+      };
+    }
+
+    // Tự đóng sau 6 giây nếu người chơi chưa bấm
+    setTimeout(() => {
+      if (overlay.style.display === 'flex') {
+        overlay.style.display = 'none';
+      }
+    }, 6000);
+  }
+
+  // Toast thông báo nổi trên cùng màn hình
+  showToastNotification(message) {
+    const container = document.getElementById('global-toast-container');
+    if (!container) return;
+
+    const item = document.createElement('div');
+    item.className = 'global-toast-item';
+    item.innerHTML = message;
+    container.appendChild(item);
+
+    setTimeout(() => {
+      if (item.parentNode) item.parentNode.removeChild(item);
+    }, 3000);
+  }
+
   // ================= MÀN VINH DANH TOP 5 (PODIUM CEREMONY) =================
 
   showPodiumScreen() {
