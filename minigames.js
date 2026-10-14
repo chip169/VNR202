@@ -372,14 +372,12 @@ class MiniGameEngine {
     const cardIcon = document.getElementById('speed-card-icon');
     const cardTitle = document.getElementById('speed-event-title');
     const cardDesc = document.getElementById('speed-event-desc');
-    const cardHint = document.getElementById('speed-event-hint');
     const cardEl = document.getElementById('speed-event-card');
 
     if (cardBadge) cardBadge.innerText = item.badge || '📜 THỬ THÁCH TRI THỨC';
     if (cardIcon) cardIcon.innerText = item.icon || '⭐';
     if (cardTitle) cardTitle.innerText = item.title;
     if (cardDesc) cardDesc.innerText = item.desc;
-    if (cardHint) cardHint.innerText = `💡 ${item.hint}`;
 
     if (cardEl) {
       cardEl.classList.remove('card-slide-in', 'correct-pulse', 'error-shake');
