@@ -43,6 +43,10 @@ class MultiplayerManager {
     this.hostProbeListeners = [];
     this.lastKnownHost = null;
 
+    // Giãn cách tương tác toàn phòng (Room-wide rate limiter: chống loạn khi 50 người cùng chơi)
+    this.lastGlobalInteractiveTime = 0;
+    this.hasStealShield = false;
+
     window.addEventListener('beforeunload', () => {
       if (this.isHost && this.isConnected) {
         this.publishMessage(`vnr202_game/${this.roomId}/events`, {
@@ -77,6 +81,7 @@ class MultiplayerManager {
       avatar: this.playerAvatar,
       score: currentScore || 0,
       isHost: this.isHost,
+      hasStealShield: this.hasStealShield,
       joinedAt: this.joinedAt,
       lastSeen: Date.now(),
       isOnline: true
@@ -670,6 +675,7 @@ class MultiplayerManager {
         case 'SCORE_SWAP': {
           console.log('🔄 Nhận sự kiện SCORE_SWAP:', data);
           soundEngine.playFanfare();
+          this.lastGlobalInteractiveTime = Date.now();
 
           // Cập nhật điểm trong danh sách người chơi
           const pInit = this.players.find(p => p.id === data.initiatorId);
@@ -713,6 +719,103 @@ class MultiplayerManager {
           if (this.app && typeof this.app.showToastNotification === 'function') {
             this.app.showToastNotification(`🔄 ${data.initiatorName} vừa đổi điểm với ${data.targetName}!`);
           }
+          break;
+        }
+
+        // Sự kiện CƯỚP ĐIỂM từ người khác
+        case 'SCORE_STEAL': {
+          console.log('⚡ Nhận sự kiện SCORE_STEAL:', data);
+          soundEngine.playFanfare();
+          this.lastGlobalInteractiveTime = Date.now();
+
+          const pInit = this.players.find(p => p.id === data.initiatorId);
+          if (pInit) pInit.score = data.initiatorNewScore;
+          const pTarg = this.players.find(p => p.id === data.targetId);
+          if (pTarg) pTarg.score = data.targetNewScore;
+          this.persistRoomResults();
+
+          if (this.isHost) {
+            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+              this.app.updateProjectorLeaderboard();
+            }
+            if (this.app && typeof this.app.addProjectorActivity === 'function') {
+              this.app.addProjectorActivity(
+                `⚡ <b>${data.initiatorName}</b> vừa cướp thành công <b>${data.stolenAmount.toLocaleString()}đ</b> từ <b>${data.targetName}</b>!`,
+                'steal'
+              );
+            }
+          }
+
+          // Thông báo cho nạn nhân bị cướp điểm
+          if (this.playerId === data.targetId) {
+            if (this.app && this.app.miniGame) {
+              this.app.miniGame.timelineScore = data.targetNewScore;
+              this.app.miniGame.updateHUD();
+              this.app.miniGame.savePlayerState();
+            }
+            if (this.app && typeof this.app.showScoreStealAlert === 'function') {
+              this.app.showScoreStealAlert({
+                role: 'target',
+                otherName: data.initiatorName,
+                otherAvatar: data.initiatorAvatar,
+                stolenAmount: data.stolenAmount,
+                newScore: data.targetNewScore
+              });
+            }
+          }
+
+          if (this.app && typeof this.app.showToastNotification === 'function') {
+            this.app.showToastNotification(`⚡ ${data.initiatorName} vừa cướp ${data.stolenAmount}đ từ ${data.targetName}!`);
+          }
+          break;
+        }
+
+        // Sự kiện KHIÊN BẢO VỆ CHẶN ĐỨNG PHA CƯỚP/ĐỔI ĐIỂM
+        case 'STEAL_BLOCKED': {
+          console.log('🛡️ Sự kiện cướp/đổi điểm bị Khiên Bảo Vệ chặn đứng:', data);
+          soundEngine.playCorrect();
+          this.lastGlobalInteractiveTime = Date.now();
+
+          // Hủy trạng thái khiên của nạn nhân
+          const targetPlayer = this.players.find(p => p.id === data.targetId);
+          if (targetPlayer) targetPlayer.hasStealShield = false;
+
+          if (this.isHost) {
+            if (this.app && typeof this.app.addProjectorActivity === 'function') {
+              this.app.addProjectorActivity(
+                `🛡️ <b>${data.targetName}</b> đã dùng Khiên Bảo Vệ chặn đứng pha ${data.actionType === 'swap' ? 'đổi điểm' : 'cướp điểm'} từ <b>${data.initiatorName}</b>!`,
+                'shield'
+              );
+            }
+          }
+
+          // Nạn nhân được bảo vệ an toàn
+          if (this.playerId === data.targetId) {
+            this.hasStealShield = false;
+            if (this.app && this.app.miniGame) {
+              this.app.miniGame.hasStealShield = false;
+              this.app.miniGame.updateHUD();
+              this.app.miniGame.savePlayerState();
+            }
+            if (this.app && typeof this.app.showShieldBlockedAlert === 'function') {
+              this.app.showShieldBlockedAlert({
+                initiatorName: data.initiatorName,
+                initiatorAvatar: data.initiatorAvatar,
+                actionType: data.actionType
+              });
+            }
+          }
+
+          if (this.app && typeof this.app.showToastNotification === 'function') {
+            this.app.showToastNotification(`🛡️ ${data.targetName} đã dùng Khiên Bảo Vệ chặn đứng pha cướp điểm!`);
+          }
+          break;
+        }
+
+        // Cập nhật trạng thái Khiên Bảo Vệ của người chơi
+        case 'SHIELD_UPDATE': {
+          const p = this.players.find(x => x.id === data.playerId);
+          if (p) p.hasStealShield = !!data.hasShield;
           break;
         }
 
@@ -1042,6 +1145,106 @@ class MultiplayerManager {
     });
   }
 
+  // Kiểm tra điều kiện áp dụng toàn phòng: Giãn cách 45s và tỷ lệ 1:15 (tránh loạn khi 50 người cùng chơi)
+  canTriggerRoomInteractivity() {
+    const now = Date.now();
+    const cooldownMs = 45000;
+    if (this.lastGlobalInteractiveTime && (now - this.lastGlobalInteractiveTime) < cooldownMs) {
+      console.log('⏳ Phòng đang trong thời gian hồi chiêu tương tác đối kháng (45s).');
+      return false;
+    }
+    // Tỷ lệ xuất hiện đúng chuẩn 1:15
+    return Math.random() < (1 / 15);
+  }
+
+  // Cập nhật trạng thái Khiên Bảo Vệ Chống Cướp Điểm
+  updateMyShieldState(hasShield) {
+    this.hasStealShield = !!hasShield;
+    const me = this.players.find(p => p.id === this.playerId);
+    if (me) me.hasStealShield = !!hasShield;
+    if (this.isConnected) {
+      this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+        type: 'SHIELD_UPDATE',
+        playerId: this.playerId,
+        hasShield: !!hasShield
+      });
+    }
+  }
+
+  // Thực hiện CƯỚP ĐIỂM từ một người chơi ngẫu nhiên khác trong phòng
+  executeScoreSteal(amount = 300) {
+    const delegates = this.getRealDelegates().filter(p => p.id !== this.playerId);
+    if (!delegates || delegates.length === 0) {
+      return { success: false, reason: 'no_other_players' };
+    }
+
+    // Ưu tiên chọn người chơi có điểm > 0
+    let potentialTargets = delegates.filter(p => (p.score || 0) > 0);
+    if (potentialTargets.length === 0) potentialTargets = delegates;
+
+    const target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+    const myCurrentScore = (this.app && this.app.miniGame) ? this.app.miniGame.timelineScore : (this.players.find(p => p.id === this.playerId)?.score || 0);
+    const targetCurrentScore = target.score || 0;
+
+    // KIỂM TRA ĐỐI THỦ CÓ KHIÊN BẢO VỆ CHỐNG CƯỚP ĐIỂM KHÔNG
+    if (target.hasStealShield) {
+      target.hasStealShield = false;
+      this.lastGlobalInteractiveTime = Date.now();
+
+      this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+        type: 'STEAL_BLOCKED',
+        actionType: 'steal',
+        initiatorId: this.playerId,
+        initiatorName: this.playerName,
+        initiatorAvatar: this.playerAvatar,
+        targetId: target.id,
+        targetName: target.name,
+        targetAvatar: target.avatar
+      });
+
+      return {
+        success: true,
+        blockedByShield: true,
+        target: target
+      };
+    }
+
+    // Không có khiên -> Cướp điểm thành công!
+    const stolenAmount = Math.min(amount, Math.max(100, targetCurrentScore));
+    const initiatorNewScore = myCurrentScore + stolenAmount;
+    const targetNewScore = Math.max(0, targetCurrentScore - stolenAmount);
+
+    target.score = targetNewScore;
+    const me = this.players.find(p => p.id === this.playerId);
+    if (me) me.score = initiatorNewScore;
+    this.lastGlobalInteractiveTime = Date.now();
+    this.persistRoomResults();
+
+    this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+      type: 'SCORE_STEAL',
+      initiatorId: this.playerId,
+      initiatorName: this.playerName,
+      initiatorAvatar: this.playerAvatar,
+      targetId: target.id,
+      targetName: target.name,
+      targetAvatar: target.avatar,
+      stolenAmount: stolenAmount,
+      initiatorOldScore: myCurrentScore,
+      initiatorNewScore: initiatorNewScore,
+      targetOldScore: targetCurrentScore,
+      targetNewScore: targetNewScore
+    });
+
+    return {
+      success: true,
+      blockedByShield: false,
+      target: target,
+      stolenAmount: stolenAmount,
+      initiatorNewScore: initiatorNewScore,
+      targetNewScore: targetNewScore
+    };
+  }
+
   // Thực hiện hoán đổi điểm với một người chơi ngẫu nhiên khác trong phòng
   executeScoreSwap() {
     const delegates = this.getRealDelegates().filter(p => p.id !== this.playerId);
@@ -1054,6 +1257,29 @@ class MultiplayerManager {
     const myCurrentScore = (this.app && this.app.miniGame) ? this.app.miniGame.timelineScore : (this.players.find(p => p.id === this.playerId)?.score || 0);
     const targetCurrentScore = target.score || 0;
 
+    // NẾU ĐỐI THỦ CÓ ĐIỂM CAO HƠN VÀ ĐANG CÓ KHIÊN BẢO VỆ -> KHIÊN CHẶN ĐỨNG PHA ĐỔI ĐIỂM BẤT LỢI!
+    if (target.hasStealShield && myCurrentScore < targetCurrentScore) {
+      target.hasStealShield = false;
+      this.lastGlobalInteractiveTime = Date.now();
+
+      this.publishMessage(`vnr202_game/${this.roomId}/events`, {
+        type: 'STEAL_BLOCKED',
+        actionType: 'swap',
+        initiatorId: this.playerId,
+        initiatorName: this.playerName,
+        initiatorAvatar: this.playerAvatar,
+        targetId: target.id,
+        targetName: target.name,
+        targetAvatar: target.avatar
+      });
+
+      return {
+        success: true,
+        blockedByShield: true,
+        target: target
+      };
+    }
+
     // Hoán đổi trên máy mình
     if (this.app && this.app.miniGame) {
       this.app.miniGame.timelineScore = targetCurrentScore;
@@ -1063,6 +1289,7 @@ class MultiplayerManager {
     const me = this.players.find(p => p.id === this.playerId);
     if (me) me.score = targetCurrentScore;
     target.score = myCurrentScore;
+    this.lastGlobalInteractiveTime = Date.now();
     this.persistRoomResults();
 
     // Phát sóng sự kiện SCORE_SWAP qua MQTT tới toàn bộ phòng
@@ -1082,6 +1309,7 @@ class MultiplayerManager {
 
     return {
       success: true,
+      blockedByShield: false,
       target: target,
       initiatorOldScore: myCurrentScore,
       targetOldScore: targetCurrentScore,

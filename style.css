@@ -4464,6 +4464,9 @@ html, body {
 .proj-act-finish { background: rgba(46, 125, 50, 0.15); border-left: 2px solid #4caf50; }
 .proj-act-join { background: rgba(33, 150, 243, 0.1); border-left: 2px solid #42a5f5; }
 .proj-act-warn { background: rgba(244, 67, 54, 0.1); border-left: 2px solid #ef5350; }
+.proj-act-swap { background: rgba(255, 152, 0, 0.15); border-left: 2px solid #ff9800; }
+.proj-act-steal { background: rgba(233, 30, 99, 0.2); border-left: 2px solid #e91e63; }
+.proj-act-shield { background: rgba(0, 188, 212, 0.2); border-left: 2px solid #00bcd4; }
 
 .proj-qr-remind {
   padding: 12px;
@@ -5201,4 +5204,42 @@ html, body {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-15px); }
 }
+
+/* ================= 9. HUD SHIELD BADGE & ALERT EXTENSIONS ================= */
+
+.hud-shield-badge {
+  display: inline-block;
+  font-size: 1.15rem;
+  vertical-align: middle;
+  margin-left: 6px;
+  filter: drop-shadow(0 0 8px #00e5ff);
+  animation: shieldPulse 2s ease-in-out infinite;
+}
+
+@keyframes shieldPulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 4px #00e5ff); }
+  50% { transform: scale(1.22); filter: drop-shadow(0 0 14px #00e5ff); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 4px #00e5ff); }
+}
+
+.steal-card {
+  border: 2px solid #ff4757 !important;
+  box-shadow: 0 0 50px rgba(255, 71, 87, 0.5), inset 0 0 25px rgba(0, 0, 0, 0.7) !important;
+}
+
+.steal-badge {
+  background: linear-gradient(90deg, #d63031, #e17055) !important;
+  box-shadow: 0 0 15px rgba(214, 48, 49, 0.6) !important;
+}
+
+.shield-card {
+  border: 2px solid #00cec9 !important;
+  box-shadow: 0 0 50px rgba(0, 206, 201, 0.5), inset 0 0 25px rgba(0, 0, 0, 0.7) !important;
+}
+
+.shield-badge {
+  background: linear-gradient(90deg, #0984e3, #00cec9) !important;
+  box-shadow: 0 0 15px rgba(0, 206, 201, 0.6) !important;
+}
+
 

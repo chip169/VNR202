@@ -924,6 +924,88 @@ class HistoricalQuizApp {
     }, 6000);
   }
 
+  // Hiển thị thông báo khi có sự kiện cướp điểm (dành cho cả 2 bên)
+  showScoreStealAlert(stealData) {
+    soundEngine.playFanfare();
+    const overlay = document.getElementById('score-steal-alert-overlay');
+    const titleEl = document.getElementById('steal-alert-title');
+    const msgEl = document.getElementById('steal-alert-msg');
+    const amountValEl = document.getElementById('steal-amount-val');
+    const newValEl = document.getElementById('steal-new-val');
+    const closeBtn = document.getElementById('btn-close-steal-alert');
+
+    if (!overlay) return;
+
+    if (stealData.role === 'target') {
+      if (titleEl) titleEl.innerText = '⚡ BỊ CƯỚP ĐIỂM SỐ!';
+      if (msgEl) {
+        msgEl.innerHTML = `Đại biểu <strong>${stealData.otherAvatar || '⭐'} ${stealData.otherName}</strong> vừa mở Hộp Quà May Mắn và <strong>CƯỚP ĐI CỦA BẠN ${(stealData.stolenAmount || 0).toLocaleString()}đ</strong>!`;
+      }
+      if (amountValEl) {
+        amountValEl.innerText = `-${(stealData.stolenAmount || 0).toLocaleString()}đ`;
+        amountValEl.style.color = '#ff5252';
+      }
+    } else {
+      if (titleEl) titleEl.innerText = '⚔️ CƯỚP ĐIỂM THÀNH CÔNG!';
+      if (msgEl) {
+        msgEl.innerHTML = `Bạn vừa cướp thành công <strong>+${(stealData.stolenAmount || 0).toLocaleString()}đ</strong> từ đại biểu <strong>${stealData.otherAvatar || '⭐'} ${stealData.otherName}</strong>!`;
+      }
+      if (amountValEl) {
+        amountValEl.innerText = `+${(stealData.stolenAmount || 0).toLocaleString()}đ`;
+        amountValEl.style.color = '#4caf50';
+      }
+    }
+
+    if (newValEl) newValEl.innerText = `${(stealData.newScore || 0).toLocaleString()}đ`;
+
+    overlay.style.display = 'flex';
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        soundEngine.playClick();
+        overlay.style.display = 'none';
+      };
+    }
+
+    setTimeout(() => {
+      if (overlay.style.display === 'flex') {
+        overlay.style.display = 'none';
+      }
+    }, 6000);
+  }
+
+  // Hiển thị thông báo khi Khiên Bảo Vệ chặn đứng pha cướp/đổi điểm
+  showShieldBlockedAlert(shieldData) {
+    soundEngine.playCorrect();
+    const overlay = document.getElementById('shield-blocked-alert-overlay');
+    const titleEl = document.getElementById('shield-alert-title');
+    const msgEl = document.getElementById('shield-alert-msg');
+    const closeBtn = document.getElementById('btn-close-shield-alert');
+
+    if (!overlay) return;
+
+    const actionText = shieldData.actionType === 'swap' ? 'hoán đổi điểm' : 'cướp điểm';
+    if (titleEl) titleEl.innerText = '🛡️ KHIÊN BẢO VỆ ĐÃ KÍCH HOẠT!';
+    if (msgEl) {
+      msgEl.innerHTML = `Khiên Bảo Vệ của bạn vừa <strong>chặn đứng tuyệt đối</strong> pha ${actionText} từ đại biểu <strong>${shieldData.initiatorAvatar || '⭐'} ${shieldData.initiatorName}</strong>!<br><br><span style="color:#4caf50;font-weight:700;">Bạn được bảo vệ an toàn 100%, không bị trừ bất kỳ điểm nào!</span>`;
+    }
+
+    overlay.style.display = 'flex';
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        soundEngine.playClick();
+        overlay.style.display = 'none';
+      };
+    }
+
+    setTimeout(() => {
+      if (overlay.style.display === 'flex') {
+        overlay.style.display = 'none';
+      }
+    }, 6000);
+  }
+
   // Toast thông báo nổi trên cùng màn hình
   showToastNotification(message) {
     const container = document.getElementById('global-toast-container');

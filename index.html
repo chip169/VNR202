@@ -760,6 +760,43 @@
       </div>
     </div>
 
+    <!-- ================= 8. THÔNG BÁO CƯỚP ĐIỂM ================= -->
+    <div id="score-steal-alert-overlay" class="modal-overlay score-swap-overlay" style="display: none;">
+      <div class="score-swap-card animate-appear steal-card">
+        <div class="swap-alert-badge steal-badge">⚔️ BIẾN CỐ CHIẾN TRƯỜNG!</div>
+        <div class="swap-icon-pulse">💰</div>
+        <h2 class="swap-title" id="steal-alert-title">CƯỚP ĐIỂM SỐ!</h2>
+        <div class="swap-message" id="steal-alert-msg">
+          Đại biểu vừa cướp điểm từ bạn!
+        </div>
+        <div class="swap-scores-box" id="steal-scores-box">
+          <div class="swap-score-col">
+            <span class="swap-col-label" id="steal-amount-label">Số Điểm Cướp</span>
+            <strong class="swap-old-val" id="steal-amount-val" style="color: #ff5252; text-decoration: none;">-300đ</strong>
+          </div>
+          <div class="swap-arrow">➔</div>
+          <div class="swap-score-col highlight">
+            <span class="swap-col-label">Điểm Hiện Tại</span>
+            <strong class="swap-new-val" id="steal-new-val">0đ</strong>
+          </div>
+        </div>
+        <button type="button" class="btn-primary-start" id="btn-close-steal-alert">ĐÃ RÕ - TIẾP TỤC CHIẾN ĐẤU</button>
+      </div>
+    </div>
+
+    <!-- ================= 9. THÔNG BÁO KHIÊN BẢO VỆ CHẶN ĐỨNG ================= -->
+    <div id="shield-blocked-alert-overlay" class="modal-overlay score-swap-overlay" style="display: none;">
+      <div class="score-swap-card animate-appear shield-card">
+        <div class="swap-alert-badge shield-badge">🛡️ PHÒNG THỦ TUYỆT ĐỐI!</div>
+        <div class="swap-icon-pulse">🛡️</div>
+        <h2 class="swap-title" id="shield-alert-title">KHIÊN ĐÃ KÍCH HOẠT!</h2>
+        <div class="swap-message" id="shield-alert-msg">
+          Khiên Bảo Vệ của bạn vừa chặn đứng thành công một pha cướp/đổi điểm từ đối thủ! Bạn không bị mất điểm nào!
+        </div>
+        <button type="button" class="btn-primary-start" id="btn-close-shield-alert" style="background: linear-gradient(135deg, #10b981, #059669);">TUYỆT VỜI - TIẾP TỤC CHIẾN ĐẤU</button>
+      </div>
+    </div>
+
     <!-- Container Toast thông báo nổi góc trên -->
     <div id="global-toast-container" class="global-toast-container"></div>
   </div>

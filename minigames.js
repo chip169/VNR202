@@ -163,7 +163,7 @@ class MiniGameEngine {
     this.decodedReports = [];
 
     // Mystery Gift Power-ups
-    this.hasShield = false; // Khiên bảo vệ chống đóng băng
+    this.hasStealShield = false; // Khiên bảo vệ chống cướp điểm từ người khác
     this.nextQuestionDouble = false; // Nhân đôi điểm câu kế
 
     // Tự động lưu tiến trình và điểm số khi đóng tab/rời trang
@@ -181,6 +181,7 @@ class MiniGameEngine {
         streakCount: this.streakCount,
         speedMaxCombo: this.speedMaxCombo,
         questionIndex: this.questionIndex,
+        hasStealShield: this.hasStealShield,
         stage: this.app?.currentScreen === 'cipher-game-screen' ? 'cipher' : 'timeline',
         timestamp: Date.now()
       };
@@ -291,6 +292,10 @@ class MiniGameEngine {
         restoredScore = savedState.score;
         this.speedMaxCombo = savedState.speedMaxCombo || 1;
         this.streakCount = savedState.streakCount || 0;
+        this.hasStealShield = !!savedState.hasStealShield;
+        if (this.app?.multiplayer) {
+          this.app.multiplayer.updateMyShieldState(this.hasStealShield);
+        }
         console.log('🔄 Đã phục hồi điểm số trước đó của người chơi:', restoredScore);
       }
     } catch (e) {}
@@ -398,7 +403,15 @@ class MiniGameEngine {
     const rankIcon = document.getElementById('player-rank-icon');
     const rankName = document.getElementById('player-rank-name');
 
-    if (scoreEl) scoreEl.innerText = `${this.timelineScore.toLocaleString()}đ`;
+    if (scoreEl) {
+      const shieldBadge = this.hasStealShield ? ' <span class="hud-shield-badge" title="Đang có Khiên Bảo Vệ Điểm">🛡️</span>' : '';
+      scoreEl.innerHTML = `${this.timelineScore.toLocaleString()}đ${shieldBadge}`;
+    }
+    const cipherScoreEl = document.getElementById('cipher-score-val');
+    if (cipherScoreEl) {
+      const shieldBadge = this.hasStealShield ? ' <span class="hud-shield-badge" title="Đang có Khiên Bảo Vệ Điểm">🛡️</span>' : '';
+      cipherScoreEl.innerHTML = `${this.timelineScore.toLocaleString()}đ${shieldBadge}`;
+    }
 
     const mult = this.getMultiplier();
     if (comboEl) comboEl.innerText = `x${mult}`;
@@ -617,28 +630,6 @@ class MiniGameEngine {
         this.loadNextQuestion();
       }, 750);
     } else {
-      // KIỂM TRA NẾU CÓ KHIÊN BẢO VỆ CHỐNG ĐÓNG BĂNG
-      if (this.hasShield) {
-        this.hasShield = false;
-        soundEngine.playCorrect();
-        btnEl.classList.add('btn-wrong');
-        const cardEl = document.getElementById('speed-event-card');
-        if (cardEl) cardEl.classList.add('correct-pulse');
-
-        if (typeof this.app?.showToastNotification === 'function') {
-          this.app.showToastNotification('🛡️ Khiên bảo vệ: Miễn trừ phạt đóng băng 3 giây!');
-        }
-
-        setTimeout(() => {
-          document.querySelectorAll('.speed-year-btn, .quiz-opt-btn').forEach(b => {
-            b.classList.remove('btn-correct-glow', 'btn-wrong', 'btn-reveal-correct');
-            if (typeof b.blur === 'function') b.blur();
-          });
-          this.loadNextQuestion();
-        }, 750);
-        return;
-      }
-
       // TRẢ LỜI SAI -> KÍCH HOẠT HÌNH PHẠT ĐÓNG BĂNG 3S (ANTI-SPAM)
       soundEngine.playWrong();
       btnEl.classList.add('btn-wrong', 'error-shake');
@@ -674,14 +665,19 @@ class MiniGameEngine {
     if (revealBox) revealBox.style.display = 'none';
 
     // Tạo ngẫu nhiên 3 phần quà cho 3 rương
-    // Tỷ lệ xuất hiện quà ĐỔI ĐIỂM đúng chuẩn 1:15 (khoảng 6.67%)
-    const normalGifts = ['bonus_points', 'double_points', 'freeze_shield'];
+    // 3 phần quà tiêu chuẩn: +300đ, x2 câu kế, Khiên bảo vệ chống cướp điểm
+    const normalGifts = ['bonus_points', 'double_points', 'steal_shield'];
     const chestGifts = [];
 
-    // Tỷ lệ ra hộp trao đổi điểm là 1:15 (1/15)
-    const hasSwapGift = Math.random() < (1 / 15);
-    if (hasSwapGift) {
-      chestGifts.push('swap_score');
+    // Kiểm tra tỷ lệ 1:15 VÀ điều kiện áp dụng toàn phòng (giãn cách 45s để 50 người không bị loạn)
+    const canDoInteractive = this.app?.multiplayer?.canTriggerRoomInteractivity
+      ? this.app.multiplayer.canTriggerRoomInteractivity()
+      : (Math.random() < (1 / 15));
+
+    if (canDoInteractive) {
+      // Ngẫu nhiên chọn CƯỚP ĐIỂM hoặc ĐỔI ĐIỂM
+      const interactiveGift = Math.random() < 0.6 ? 'steal_points' : 'swap_score';
+      chestGifts.push(interactiveGift);
     }
     while (chestGifts.length < 3) {
       const g = normalGifts[Math.floor(Math.random() * normalGifts.length)];
@@ -722,25 +718,32 @@ class MiniGameEngine {
       iconEl.innerText = '🔄';
       titleEl.innerText = 'BỐC TRÚNG: HOÁN ĐỔI ĐIỂM SỐ!';
       
-      // Thực hiện hoán đổi điểm với một người chơi ngẫu nhiên
       const result = this.app.multiplayer ? this.app.multiplayer.executeScoreSwap() : null;
       if (result && result.success) {
-        descEl.innerHTML = `Bạn vừa tráo đổi điểm số ngoạn mục với đại biểu <strong>${result.target.name}</strong>!`;
-        scoresEl.innerHTML = `
-          <div class="swap-scores-box">
-            <div class="swap-score-col">
-              <span class="swap-col-label">Điểm Trước Của Bạn</span>
-              <strong class="swap-old-val">${result.initiatorOldScore.toLocaleString()}đ</strong>
+        if (result.blockedByShield) {
+          this.timelineScore += 100;
+          this.updateHUD();
+          this.savePlayerState();
+          if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+          descEl.innerHTML = `Đại biểu <strong>${result.target.name}</strong> đang có <strong>Khiên Bảo Vệ</strong> nên đã chặn đứng pha đổi điểm!<br>Trung ương tặng bạn <strong>+100 điểm an ủi</strong>!`;
+          scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff9800;">🛡️ BỊ KHIÊN CHẶN ĐỨNG (+100Đ AN ỦI)</strong>`;
+        } else {
+          descEl.innerHTML = `Bạn vừa tráo đổi điểm số ngoạn mục với đại biểu <strong>${result.target.name}</strong>!`;
+          scoresEl.innerHTML = `
+            <div class="swap-scores-box">
+              <div class="swap-score-col">
+                <span class="swap-col-label">Điểm Trước Của Bạn</span>
+                <strong class="swap-old-val">${result.initiatorOldScore.toLocaleString()}đ</strong>
+              </div>
+              <div class="swap-arrow">⇄</div>
+              <div class="swap-score-col highlight">
+                <span class="swap-col-label">Điểm Mới Nhận</span>
+                <strong class="swap-new-val">${result.initiatorNewScore.toLocaleString()}đ</strong>
+              </div>
             </div>
-            <div class="swap-arrow">⇄</div>
-            <div class="swap-score-col highlight">
-              <span class="swap-col-label">Điểm Mới Nhận</span>
-              <strong class="swap-new-val">${result.initiatorNewScore.toLocaleString()}đ</strong>
-            </div>
-          </div>
-        `;
+          `;
+        }
       } else {
-        // Nếu chơi solo hoặc chưa có ai khác trong phòng
         this.timelineScore += 300;
         this.updateHUD();
         this.savePlayerState();
@@ -748,6 +751,57 @@ class MiniGameEngine {
         descEl.innerHTML = `Hiện tại chưa có đại biểu khác trong phòng để đổi điểm.<br>Trung ương tặng thưởng cho bạn <strong>+300 điểm danh dự</strong>!`;
         scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ffd700;">+300 ĐIỂM THƯỞNG DANH DỰ</strong>`;
       }
+    } else if (giftType === 'steal_points') {
+      iconEl.innerText = '⚡';
+      titleEl.innerText = 'BỐC TRÚNG: CƯỚP ĐIỂM TỪ ĐỐI THỦ!';
+      const stealResult = this.app.multiplayer ? this.app.multiplayer.executeScoreSteal(300) : null;
+      if (stealResult && stealResult.success) {
+        if (stealResult.blockedByShield) {
+          this.timelineScore += 100;
+          this.updateHUD();
+          this.savePlayerState();
+          if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+          descEl.innerHTML = `Đại biểu <strong>${stealResult.target.name}</strong> đang có <strong>Khiên Bảo Vệ</strong> nên đã chặn đứng lượt cướp điểm!<br>Trung ương tặng bạn <strong>+100 điểm an ủi</strong>!`;
+          scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff9800;">🛡️ BỊ KHIÊN CHẶN ĐỨNG (+100Đ AN ỦI)</strong>`;
+        } else {
+          this.timelineScore = stealResult.initiatorNewScore;
+          this.updateHUD();
+          this.savePlayerState();
+          if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+          descEl.innerHTML = `Pha cướp điểm ngoạn mục! Bạn vừa cướp thành công <strong>+${stealResult.stolenAmount.toLocaleString()}đ</strong> từ đại biểu <strong>${stealResult.target.name}</strong>!`;
+          scoresEl.innerHTML = `
+            <div class="swap-scores-box">
+              <div class="swap-score-col">
+                <span class="swap-col-label">Nạn Nhân</span>
+                <strong class="swap-old-val">${stealResult.target.name} (-${stealResult.stolenAmount.toLocaleString()}đ)</strong>
+              </div>
+              <div class="swap-arrow">➔</div>
+              <div class="swap-score-col highlight">
+                <span class="swap-col-label">Bạn Nhận Được</span>
+                <strong class="swap-new-val">+${stealResult.stolenAmount.toLocaleString()}đ</strong>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        this.timelineScore += 300;
+        this.updateHUD();
+        this.savePlayerState();
+        if (this.app && this.app.multiplayer) this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+        descEl.innerHTML = `Hiện tại chưa có đại biểu khác trong phòng để cướp điểm.<br>Trung ương tặng thưởng cho bạn <strong>+300 điểm danh dự</strong>!`;
+        scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ffd700;">+300 ĐIỂM THƯỞNG DANH DỰ</strong>`;
+      }
+    } else if (giftType === 'steal_shield') {
+      iconEl.innerText = '🛡️';
+      titleEl.innerText = 'LÁ CHẮN BẢO VỆ ĐIỂM SỐ!';
+      this.hasStealShield = true;
+      if (this.app && this.app.multiplayer) {
+        this.app.multiplayer.updateMyShieldState(true);
+      }
+      this.updateHUD();
+      this.savePlayerState();
+      descEl.innerHTML = `Bạn nhận được <strong>01 Khiên Bảo Vệ Điểm</strong>: Tự động vô hiệu hóa và chặn đứng 01 lượt cướp điểm hoặc hoán đổi điểm bất lợi từ đại biểu khác!`;
+      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#4caf50;">🛡️ KHIÊN CHỐNG CƯỚP ĐIỂM ĐÃ SẴN SÀNG</strong>`;
     } else if (giftType === 'bonus_points') {
       iconEl.innerText = '⭐';
       titleEl.innerText = 'ĐIỆN TÍN KHEN NGỢI TỪ TRUNG ƯƠNG!';
@@ -763,12 +817,6 @@ class MiniGameEngine {
       this.nextQuestionDouble = true;
       descEl.innerHTML = `Câu hỏi tiếp theo bạn trả lời đúng sẽ được <strong>nhân đôi (x2)</strong> toàn bộ số điểm ghi được!`;
       scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff9800;">⚡ KÍCH HOẠT x2 ĐIỂM CÂU KẾ TIẾP</strong>`;
-    } else if (giftType === 'freeze_shield') {
-      iconEl.innerText = '🛡️';
-      titleEl.innerText = 'LÁ CHẮN BẢO VỆ BÍ MẬT!';
-      this.hasShield = true;
-      descEl.innerHTML = `Bạn nhận được <strong>01 Khiên bảo vệ</strong>: Miễn trừ hoàn toàn hình phạt đóng băng 3 giây nếu chọn sai câu kế tiếp!`;
-      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#4caf50;">🛡️ KHIÊN BẢO VỆ ĐÃ SẴN SÀNG</strong>`;
     }
 
     let countdown = 4;
