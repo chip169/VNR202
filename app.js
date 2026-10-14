@@ -459,8 +459,12 @@ class HistoricalQuizApp {
       tlBack.addEventListener('click', () => {
         soundEngine.playClick();
         if (this.miniGame) {
+          this.miniGame.savePlayerState();
           this.miniGame.clearSpeedTimer();
           this.miniGame.stopStopwatch();
+        }
+        if (this.multiplayer) {
+          this.multiplayer.leaveRoom();
         }
         this.switchScreen('start-screen');
       });
@@ -470,7 +474,11 @@ class HistoricalQuizApp {
       cpBack.addEventListener('click', () => {
         soundEngine.playClick();
         if (this.miniGame) {
+          this.miniGame.savePlayerState();
           this.miniGame.stopStopwatch();
+        }
+        if (this.multiplayer) {
+          this.multiplayer.leaveRoom();
         }
         this.switchScreen('start-screen');
       });
@@ -768,24 +776,36 @@ class HistoricalQuizApp {
 
     topN.forEach((item, idx) => {
       const row = document.createElement('div');
-      row.className = `proj-lb-row ${item.isFinished ? 'proj-finished' : ''}`;
+      const isOffline = item.hasLeft || !item.isOnline;
+      row.className = `proj-lb-row ${item.isFinished ? 'proj-finished' : ''} ${isOffline ? 'proj-offline' : ''}`;
 
       const rankBadges = ['🥇', '🥈', '🥉'];
       const rankStr = idx < 3 ? rankBadges[idx] : `${idx + 1}`;
 
-      const timeText = item.isFinished
-        ? (item.formattedTime || '--:--')
-        : (item.score > 0 ? '⏳ đang thi' : '⏳ chờ...');
+      let timeText;
+      if (item.isFinished) {
+        timeText = item.formattedTime || '--:--';
+      } else if (isOffline) {
+        timeText = '🚪 Đã rời';
+      } else if (item.score > 0) {
+        timeText = '⏳ đang thi';
+      } else {
+        timeText = '⏳ chờ...';
+      }
 
       // Progress: nếu đã xong thì 100%, còn thì ước lượng theo điểm
       const progressPct = item.isFinished ? 100 : Math.min(99, Math.floor((item.score / 2500) * 100));
+
+      const statusBadge = item.isFinished
+        ? '<span class="plb-done-badge">✓ XONG</span>'
+        : (isOffline ? '<span class="plb-offline-badge">ĐÃ LƯU</span>' : '');
 
       row.innerHTML = `
         <span class="plb-col-rank plbr-${idx + 1}">${rankStr}</span>
         <div class="plb-col-player">
           <span class="plb-avatar">${item.avatar || '⭐'}</span>
           <span class="plb-name">${item.name}</span>
-          ${item.isFinished ? '<span class="plb-done-badge">✓ XONG</span>' : ''}
+          ${statusBadge}
         </div>
         <div class="plb-col-progress">
           <div class="plb-progress-bar"><div class="plb-progress-fill" style="width:${progressPct}%"></div></div>
@@ -986,6 +1006,31 @@ class HistoricalQuizApp {
       return topList;
     } catch (e) {
       console.warn('Lỗi lưu kỷ lục:', e);
+      return [];
+    }
+  }
+
+  // Tự động lưu hoặc cập nhật kỷ lục người chơi (dành cho cập nhật realtime & khi thoát giữa chừng)
+  saveOrUpdateHallOfFame(record) {
+    try {
+      const list = this.getHallOfFame();
+      const existingIdx = list.findIndex(r => r.name === record.name);
+      if (existingIdx >= 0) {
+        if ((record.score || 0) >= (list[existingIdx].score || 0)) {
+          list[existingIdx] = Object.assign({}, list[existingIdx], record);
+        }
+      } else {
+        list.push(record);
+      }
+      list.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.timeSeconds - b.timeSeconds;
+      });
+      const topList = list.slice(0, 20);
+      localStorage.setItem('vnr202_hall_of_fame', JSON.stringify(topList));
+      return topList;
+    } catch (e) {
+      console.warn('Lỗi lưu/cập nhật kỷ lục:', e);
       return [];
     }
   }

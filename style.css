@@ -4316,6 +4316,23 @@ html, body {
   flex-shrink: 0;
 }
 
+.plb-offline-badge {
+  font-size: 0.65rem;
+  background: rgba(180, 110, 20, 0.45);
+  color: #ffcc80;
+  border: 1px solid rgba(255, 179, 0, 0.5);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.proj-lb-row.proj-offline {
+  opacity: 0.82;
+  border-left: 3px solid rgba(255, 179, 0, 0.6);
+}
+
 .plb-col-progress {
   display: flex;
   align-items: center;

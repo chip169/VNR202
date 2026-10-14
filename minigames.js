@@ -158,6 +158,44 @@ class MiniGameEngine {
     this.selectedEvent = null;
     this.selectedLocale = null;
     this.decodedReports = [];
+
+    // Tự động lưu tiến trình và điểm số khi đóng tab/rời trang
+    window.addEventListener('beforeunload', () => this.savePlayerState());
+    window.addEventListener('pagehide', () => this.savePlayerState());
+  }
+
+  // Lưu trạng thái và điểm số của người chơi vào LocalStorage
+  savePlayerState() {
+    try {
+      const room = this.app?.multiplayer?.roomId || '1930-VN';
+      const state = {
+        roomId: room,
+        score: this.timelineScore,
+        streakCount: this.streakCount,
+        speedMaxCombo: this.speedMaxCombo,
+        questionIndex: this.questionIndex,
+        stage: this.app?.currentScreen === 'cipher-game-screen' ? 'cipher' : 'timeline',
+        timestamp: Date.now()
+      };
+      localStorage.setItem('vnr202_current_player_state', JSON.stringify(state));
+
+      // Tự động lưu hoặc cập nhật ngay vào Bảng Vàng kỷ lục (Hall of Fame) để thoát giữa chừng vẫn lưu điểm
+      if (this.timelineScore > 0 && this.app && typeof this.app.saveOrUpdateHallOfFame === 'function') {
+        const elapsedSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));
+        this.app.saveOrUpdateHallOfFame({
+          name: this.app.multiplayer?.playerName || 'Đại biểu',
+          avatar: this.app.multiplayer?.playerAvatar || '⭐',
+          score: this.timelineScore,
+          timeSeconds: elapsedSec,
+          formattedTime: this.formatTime(elapsedSec),
+          date: new Date().toLocaleDateString('vi-VN'),
+          isCurrentPlayer: true,
+          note: 'Đã lưu điểm trực tiếp'
+        });
+      }
+    } catch (e) {
+      console.warn('Lỗi lưu trạng thái người chơi:', e);
+    }
   }
 
   formatTime(totalSec) {
@@ -235,10 +273,23 @@ class MiniGameEngine {
 
   // ================= 1. BẮT ĐẦU ĐẤU TRƯỜNG 10 PHÚT VÔ TẬN =================
   startTimelineGame() {
-    this.timelineScore = 0;
+    // Phục hồi điểm số nếu người chơi vô tình F5, refresh hoặc vào lại cùng phòng
+    let restoredScore = 0;
+    try {
+      const savedState = JSON.parse(localStorage.getItem('vnr202_current_player_state') || '{}');
+      const curRoom = this.app?.multiplayer?.roomId || '1930-VN';
+      if (savedState.roomId === curRoom && typeof savedState.score === 'number' && (Date.now() - (savedState.timestamp || 0)) < 1800000) {
+        restoredScore = savedState.score;
+        this.speedMaxCombo = savedState.speedMaxCombo || 1;
+        this.streakCount = savedState.streakCount || 0;
+        console.log('🔄 Đã phục hồi điểm số trước đó của người chơi:', restoredScore);
+      }
+    } catch (e) {}
+
+    this.timelineScore = restoredScore;
     this.speedCombo = 1;
-    this.speedMaxCombo = 1;
-    this.streakCount = 0;
+    this.speedMaxCombo = this.speedMaxCombo || 1;
+    this.streakCount = this.streakCount || 0;
     this.questionIndex = 0;
     this.recentResults = [];
     this.isSpeedLocked = false;
@@ -507,10 +558,11 @@ class MiniGameEngine {
       const cardEl = document.getElementById('speed-event-card');
       if (cardEl) cardEl.classList.add('correct-pulse');
 
-      // Đồng bộ điểm thời gian thực tới phòng máy chiếu qua MQTT
+      // Đồng bộ điểm thời gian thực tới phòng máy chiếu qua MQTT và lưu cục bộ
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
+      this.savePlayerState();
 
       this.updateHUD();
 
@@ -535,6 +587,7 @@ class MiniGameEngine {
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
+      this.savePlayerState();
 
       this.updateHUD();
 
@@ -655,6 +708,17 @@ class MiniGameEngine {
     this.selectedEvent = null;
     this.selectedLocale = null;
     this.activeCipherTab = 'heroes';
+
+    // Phục hồi điểm nếu vào trực tiếp hoặc F5
+    if (!this.timelineScore || this.timelineScore === 0) {
+      try {
+        const savedState = JSON.parse(localStorage.getItem('vnr202_current_player_state') || '{}');
+        const curRoom = this.app?.multiplayer?.roomId || '1930-VN';
+        if (savedState.roomId === curRoom && typeof savedState.score === 'number') {
+          this.timelineScore = savedState.score;
+        }
+      } catch (e) {}
+    }
 
     this.app.switchScreen('cipher-game-screen');
 
@@ -889,6 +953,7 @@ class MiniGameEngine {
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
+      this.savePlayerState();
 
       if (matchBar) matchBar.classList.add('matched-success');
 

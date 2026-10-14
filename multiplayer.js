@@ -11,21 +11,26 @@ class MultiplayerManager {
     this.createdAsHost = false;
     this.roomId = '1930-VN';
     
-    // Lưu giữ và tái sử dụng playerId qua sessionStorage để khi F5 / Refresh không sinh đại biểu mới trùng lặp
+    // Lưu giữ và tái sử dụng playerId, tên, avatar qua localStorage/sessionStorage
     let persistentId = null;
+    let savedName = null;
+    let savedAvatar = null;
     try {
-      persistentId = sessionStorage.getItem('vnr202_player_id');
+      persistentId = localStorage.getItem('vnr202_player_id') || sessionStorage.getItem('vnr202_player_id');
+      savedName = localStorage.getItem('vnr202_player_name') || sessionStorage.getItem('vnr202_player_name');
+      savedAvatar = localStorage.getItem('vnr202_player_avatar') || sessionStorage.getItem('vnr202_player_avatar');
     } catch (e) {}
     if (!persistentId) {
       persistentId = 'p_' + Math.random().toString(36).substring(2, 9);
       try {
+        localStorage.setItem('vnr202_player_id', persistentId);
         sessionStorage.setItem('vnr202_player_id', persistentId);
       } catch (e) {}
     }
     this.playerId = persistentId;
 
-    this.playerName = 'Đại biểu Cách mạng';
-    this.playerAvatar = '⭐';
+    this.playerName = savedName || 'Đại biểu Cách mạng';
+    this.playerAvatar = savedAvatar || '⭐';
     this.joinedAt = Date.now();
     this.players = []; // Danh sách tất cả người chơi trong phòng
     this.finishedPlayers = [];
@@ -36,14 +41,27 @@ class MultiplayerManager {
 
   // Lấy bản ghi thông tin đại biểu của máy hiện tại
   getMyRecord() {
+    let currentScore = this.players.find(p => p.id === this.playerId)?.score;
+    if (currentScore === undefined && this.app && this.app.miniGame) {
+      currentScore = this.app.miniGame.timelineScore;
+    }
+    if (currentScore === undefined || currentScore === null) {
+      try {
+        const savedState = JSON.parse(localStorage.getItem('vnr202_current_player_state') || '{}');
+        if (savedState.roomId === this.roomId && typeof savedState.score === 'number') {
+          currentScore = savedState.score;
+        }
+      } catch (e) {}
+    }
     return {
       id: this.playerId,
       name: this.playerName,
       avatar: this.playerAvatar,
-      score: this.players.find(p => p.id === this.playerId)?.score || 0,
+      score: currentScore || 0,
       isHost: this.isHost,
       joinedAt: this.joinedAt,
-      lastSeen: Date.now()
+      lastSeen: Date.now(),
+      isOnline: true
     };
   }
 
@@ -135,8 +153,9 @@ class MultiplayerManager {
     this.playerAvatar = '🏛️';
     this.joinedAt = Date.now();
 
-    // Đưa ngay bản thân vào danh sách người chơi
+    // Khởi tạo danh sách người chơi (phục hồi kết quả cũ của phòng nếu có)
     this.players = [this.getMyRecord()];
+    this.restoreRoomResults();
 
     // Cập nhật giao diện và render mã QR trên màn chiếu máy chủ
     this.updateLobbyUI();
@@ -155,6 +174,12 @@ class MultiplayerManager {
     this.playerName = (playerName || 'Đại biểu').trim();
     this.playerAvatar = playerAvatar || '⭐';
     this.joinedAt = Date.now();
+
+    try {
+      localStorage.setItem('vnr202_player_name', this.playerName);
+      localStorage.setItem('vnr202_player_avatar', this.playerAvatar);
+      localStorage.setItem('vnr202_last_room', this.roomId);
+    } catch (e) {}
 
     // Đưa ngay bản thân vào danh sách đại biểu
     this.players = [this.getMyRecord()];
@@ -197,13 +222,28 @@ class MultiplayerManager {
       if (!this.isConnected) return;
       this.sendMyPresence();
 
-      // Dọn dẹp những người chơi không còn phản hồi trong hơn 10 giây (ngoại trừ chính mình)
       const now = Date.now();
       const beforeCount = this.players.length;
-      this.players = this.players.filter(p => {
-        if (p.id === this.playerId) return true;
-        return (now - (p.lastSeen || now)) < 10000;
+
+      // Cập nhật trạng thái online/offline dựa trên heartbeat
+      this.players.forEach(p => {
+        if (p.id === this.playerId) {
+          p.isOnline = true;
+          return;
+        }
+        const isStale = (now - (p.lastSeen || now)) >= 10000;
+        p.isOnline = !isStale;
       });
+
+      // Chỉ loại bỏ khỏi danh sách khi ở sảnh chờ trước khi trận đấu bắt đầu VÀ chưa có điểm
+      if (!this.isGameStarted) {
+        this.players = this.players.filter(p => {
+          if (p.id === this.playerId) return true;
+          // Người chơi đã có điểm thi đấu hoặc đã hoàn thành -> Tuyệt đối giữ lại kết quả
+          if ((p.score && p.score > 0) || p.isFinished) return true;
+          return (now - (p.lastSeen || now)) < 10000;
+        });
+      }
 
       if (this.players.length !== beforeCount) {
         this.evaluateHost();
@@ -431,12 +471,28 @@ class MultiplayerManager {
 
         // Cập nhật điểm số trực tiếp (Live Score)
         case 'SCORE_UPDATE': {
-          const target = this.players.find(p => p.id === data.playerId);
+          let target = this.players.find(p => p.id === data.playerId);
           if (target) {
-            target.score = data.score;
-            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
-              this.app.updateProjectorLeaderboard();
-            }
+            target.score = Math.max(target.score || 0, data.score);
+            target.lastSeen = Date.now();
+            target.isOnline = true;
+            target.hasLeft = false;
+          } else {
+            target = {
+              id: data.playerId,
+              name: data.name || 'Đại biểu',
+              avatar: data.avatar || '⭐',
+              score: data.score || 0,
+              isHost: false,
+              lastSeen: Date.now(),
+              isOnline: true,
+              hasLeft: false
+            };
+            this.players.push(target);
+          }
+          this.persistRoomResults();
+          if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+            this.app.updateProjectorLeaderboard();
           }
           break;
         }
@@ -458,7 +514,9 @@ class MultiplayerManager {
               pRoom.timeSeconds = finPlayer.timeSeconds;
               pRoom.formattedTime = finPlayer.formattedTime;
               pRoom.isFinished = true;
+              pRoom.isOnline = true;
             }
+            this.persistRoomResults();
             if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
               this.app.updateProjectorLeaderboard();
             }
@@ -472,13 +530,32 @@ class MultiplayerManager {
           break;
         }
 
-        // Người chơi rời phòng
+        // Người chơi rời phòng - TUYỆT ĐỐI KHÔNG XÓA KẾT QUẢ KHI ĐÃ BẮT ĐẦU TRẬN
         case 'PLAYER_LEAVE': {
-          this.players = this.players.filter(p => p.id !== data.playerId);
-          this.finishedPlayers = this.finishedPlayers.filter(p => p.id !== data.playerId);
+          const leaving = this.players.find(p => p.id === data.playerId);
+          if (this.isGameStarted || (leaving && ((leaving.score && leaving.score > 0) || leaving.isFinished))) {
+            // ĐÃ BẮT ĐẦU TRẬN HOẶC ĐÃ CÓ ĐIỂM -> GIỮ NGUYÊN BẢN GHI ĐIỂM VÀ THỨ HẠNG!
+            if (leaving) {
+              leaving.isOnline = false;
+              leaving.hasLeft = true;
+            }
+            if (this.app && typeof this.app.addProjectorActivity === 'function' && leaving) {
+              this.app.addProjectorActivity(`🚪 Đại biểu <b>${leaving.name}</b> đã rời phòng (Điểm: <b>${(leaving.score || 0).toLocaleString()}đ</b> - Đã lưu kết quả)`, 'leave');
+            }
+          } else {
+            // Chỉ xóa khỏi danh sách khi ở sảnh chờ ban đầu
+            this.players = this.players.filter(p => p.id !== data.playerId);
+            this.finishedPlayers = this.finishedPlayers.filter(p => p.id !== data.playerId);
+          }
+          this.persistRoomResults();
           this.evaluateHost();
           this.updateLobbyUI();
-          if (this.isHost) this.broadcastRoster();
+          if (this.isHost) {
+            this.broadcastRoster();
+            if (this.app && typeof this.app.updateProjectorLeaderboard === 'function') {
+              this.app.updateProjectorLeaderboard();
+            }
+          }
           break;
         }
       }
@@ -594,7 +671,7 @@ class MultiplayerManager {
   // Trả về danh sách xếp hạng của phòng hiện tại (chỉ lấy các đại biểu dự thi)
   getRoomLeaderboard() {
     const list = this.players
-      .filter(p => !p.isHost && p.name !== 'Chủ Tọa (Máy Chiếu)')
+      .filter(p => !p.isHost && (!p.name || !p.name.includes('Chủ Tọa')))
       .map(p => {
         const fin = this.finishedPlayers.find(f => f.id === p.id);
         return {
@@ -604,7 +681,9 @@ class MultiplayerManager {
           score: fin ? fin.score : (p.score || 0),
           timeSeconds: fin ? fin.timeSeconds : (p.timeSeconds || 9999),
           formattedTime: fin ? fin.formattedTime : (p.formattedTime || '--:--'),
-          isFinished: !!fin || !!p.isFinished
+          isFinished: !!fin || !!p.isFinished,
+          isOnline: p.isOnline !== false,
+          hasLeft: !!p.hasLeft
         };
       });
 
@@ -618,11 +697,60 @@ class MultiplayerManager {
     return list;
   }
 
+  // Lưu trữ cục bộ toàn bộ kết quả phòng (phòng trường hợp thoát tab/F5)
+  persistRoomResults() {
+    try {
+      const records = this.getRoomLeaderboard();
+      if (records.length > 0) {
+        localStorage.setItem(`vnr202_room_${this.roomId}_results`, JSON.stringify({
+          updatedAt: Date.now(),
+          isGameStarted: this.isGameStarted,
+          currentStage: this.currentStage,
+          records: records
+        }));
+      }
+    } catch (e) {}
+  }
+
+  // Phục hồi kết quả phòng từ bộ nhớ cục bộ
+  restoreRoomResults() {
+    try {
+      const stored = localStorage.getItem(`vnr202_room_${this.roomId}_results`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data && Array.isArray(data.records) && (Date.now() - (data.updatedAt || 0)) < 7200000) {
+          data.records.forEach(r => {
+            if (r.id === this.playerId) return;
+            if (!this.players.find(p => p.id === r.id)) {
+              this.players.push({
+                id: r.id,
+                name: r.name,
+                avatar: r.avatar,
+                score: r.score || 0,
+                timeSeconds: r.timeSeconds || 9999,
+                formattedTime: r.formattedTime || '--:--',
+                isFinished: !!r.isFinished,
+                isHost: false,
+                isOnline: false,
+                hasLeft: true,
+                lastSeen: data.updatedAt
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {}
+  }
+
   // Gửi cập nhật điểm số của máy hiện tại
   sendScoreUpdate(newScore) {
     if (!this.isConnected) return;
     const me = this.players.find(p => p.id === this.playerId);
-    if (me) me.score = newScore;
+    if (me) {
+      me.score = newScore;
+      me.isOnline = true;
+      me.hasLeft = false;
+    }
 
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'SCORE_UPDATE',
@@ -636,6 +764,23 @@ class MultiplayerManager {
   // Rời phòng
   leaveRoom() {
     this.stopHeartbeat();
+
+    // Lưu kết quả cá nhân của người chơi vào Bảng Vàng (Hall of Fame) để không bao giờ bị mất
+    const currentScore = (this.app && this.app.miniGame) ? this.app.miniGame.timelineScore : (this.players.find(p => p.id === this.playerId)?.score || 0);
+    if (currentScore > 0 && this.app && typeof this.app.saveOrUpdateHallOfFame === 'function') {
+      const timeSec = (this.app && this.app.miniGame) ? this.app.miniGame.gameTimeSeconds : 0;
+      this.app.saveOrUpdateHallOfFame({
+        name: this.playerName,
+        avatar: this.playerAvatar,
+        score: currentScore,
+        timeSeconds: timeSec || 60,
+        formattedTime: (this.app && typeof this.app.formatSeconds === 'function') ? this.app.formatSeconds(timeSec || 60) : '--:--',
+        date: new Date().toLocaleDateString('vi-VN'),
+        isCurrentPlayer: true,
+        note: 'Đã lưu điểm khi rời phòng'
+      });
+    }
+
     if (this.isConnected) {
       this.publishMessage(`vnr202_game/${this.roomId}/events`, {
         type: 'PLAYER_LEAVE',
@@ -645,9 +790,10 @@ class MultiplayerManager {
         this.client.unsubscribe(`vnr202_game/${this.roomId}/#`);
       } catch (e) {}
     }
+
+    this.persistRoomResults();
     this.createdAsHost = false;
     this.isHost = false;
-    this.players = [];
   }
 
   // Cập nhật giao diện Sảnh Chờ Máy Chiếu
