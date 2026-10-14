@@ -669,30 +669,23 @@ class MiniGameEngine {
     if (chestsGrid) chestsGrid.style.display = 'grid';
     if (revealBox) revealBox.style.display = 'none';
 
-    // Tạo ngẫu nhiên 3 phần quà cho 3 rương
-    // 3 phần quà tiêu chuẩn: +300đ, x2 câu kế, Khiên bảo vệ chống cướp điểm
-    const normalGifts = ['bonus_points', 'double_points', 'steal_shield'];
-    const chestGifts = [];
+    // 6 loại quà may mắn với tỷ lệ xuất hiện hoàn toàn bằng nhau (1/6 = 16.67% mỗi loại)
+    const allGifts = [
+      'bonus_points',  // +300 điểm thưởng
+      'double_points', // x2 điểm câu kế
+      'steal_shield',  // Khiên bảo vệ chống cướp điểm
+      'steal_points',  // Cướp 300 điểm từ người khác
+      'swap_score',    // Hoán đổi điểm số ngẫu nhiên
+      'bomb_penalty'   // Bị dính bom trừ 300 điểm
+    ];
 
-    // Kiểm tra tỷ lệ 1:15 VÀ điều kiện áp dụng toàn phòng (giãn cách 45s để 50 người không bị loạn)
-    const canDoInteractive = this.app?.multiplayer?.canTriggerRoomInteractivity
-      ? this.app.multiplayer.canTriggerRoomInteractivity()
-      : (Math.random() < (1 / 15));
-
-    if (canDoInteractive) {
-      // Ngẫu nhiên chọn CƯỚP ĐIỂM hoặc ĐỔI ĐIỂM
-      const interactiveGift = Math.random() < 0.6 ? 'steal_points' : 'swap_score';
-      chestGifts.push(interactiveGift);
-    }
-    while (chestGifts.length < 3) {
-      const g = normalGifts[Math.floor(Math.random() * normalGifts.length)];
-      chestGifts.push(g);
-    }
-    // Shuffle 3 rương
-    for (let i = chestGifts.length - 1; i > 0; i--) {
+    // Xáo trộn ngẫu nhiên (Fisher-Yates) và chọn 3 rương
+    const shuffledPool = [...allGifts];
+    for (let i = shuffledPool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [chestGifts[i], chestGifts[j]] = [chestGifts[j], chestGifts[i]];
+      [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
     }
+    const chestGifts = shuffledPool.slice(0, 3);
 
     // Gắn sự kiện click cho từng rương
     const chestEls = document.querySelectorAll('.mystery-chest-box');
@@ -822,6 +815,28 @@ class MiniGameEngine {
       this.nextQuestionDouble = true;
       descEl.innerHTML = `Câu hỏi tiếp theo bạn trả lời đúng sẽ được <strong>nhân đôi (x2)</strong> toàn bộ số điểm ghi được!`;
       scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff9800;">⚡ KÍCH HOẠT x2 ĐIỂM CÂU KẾ TIẾP</strong>`;
+    } else if (giftType === 'bomb_penalty') {
+      soundEngine.playWrong();
+      iconEl.innerText = '💣';
+      titleEl.innerText = 'BỐC TRÚNG BOM BÍ MẬT: TRỪ 300 ĐIỂM!';
+      this.timelineScore = Math.max(0, this.timelineScore - 300);
+      this.updateHUD();
+      this.savePlayerState();
+      if (this.app && this.app.multiplayer) {
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+        if (this.app.multiplayer.isConnected) {
+          this.app.multiplayer.publishMessage(`vnr202_game/${this.app.multiplayer.roomId}/events`, {
+            type: 'BOMB_EXPLODED',
+            playerId: this.app.multiplayer.playerId,
+            playerName: this.app.multiplayer.playerName || 'Đại biểu',
+            playerAvatar: this.app.multiplayer.playerAvatar || '⭐',
+            penalty: 300,
+            newScore: this.timelineScore
+          });
+        }
+      }
+      descEl.innerHTML = `Không may rồi! Bạn vừa bốc trúng <strong>Bom Bẫy Bí Mật</strong>!<br>Bom phát nổ và bạn bị <strong>trừ 300 điểm</strong>!`;
+      scoresEl.innerHTML = `<strong style="font-size:1.35rem;color:#ff4757;">💣 BỊ TRỪ 300 ĐIỂM SỐ</strong>`;
     }
 
     let countdown = 4;

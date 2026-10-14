@@ -819,6 +819,23 @@ class MultiplayerManager {
           break;
         }
 
+        // Sự kiện người chơi bốc trúng bom bí mật (-300đ)
+        case 'BOMB_EXPLODED': {
+          console.log('💣 Người chơi dính bom trừ điểm:', data);
+          if (this.isHost) {
+            if (this.app && typeof this.app.addProjectorActivity === 'function') {
+              this.app.addProjectorActivity(
+                `💣 <b>${data.playerName}</b> vừa mở trúng Bom Bẫy (-${data.penalty || 300}đ)!`,
+                'warn'
+              );
+            }
+          }
+          if (this.playerId !== data.playerId && this.app && typeof this.app.showToastNotification === 'function') {
+            this.app.showToastNotification(`💣 ${data.playerName} vừa mở trúng Bom Bẫy (-300đ)!`);
+          }
+          break;
+        }
+
         // Cập nhật điểm số trực tiếp (Live Score)
         case 'SCORE_UPDATE': {
           let target = this.players.find(p => p.id === data.playerId);
