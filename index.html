@@ -195,19 +195,20 @@
     </section>
 
     <!-- ================= 3. MINI-GAME MÀN 1: KÉO THẢ DÒNG THỜI GIAN ================= -->
+    <!-- ================= 3. MINI-GAME MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC ================= -->
     <section id="timeline-game-screen" class="screen">
-      <div class="minigame-container">
+      <div class="minigame-container speed-timeline-container">
         <!-- Top HUD -->
         <div class="minigame-header-hud">
           <div class="minigame-title-badge">
-            <span class="badge-icon">⏳</span>
+            <span class="badge-icon">⚡</span>
             <div>
-              <div class="badge-sub">MÀN 1: TRỤC THỜI GIAN LỊCH SỬ</div>
-              <h3 id="timeline-stage-title" class="badge-main-title">Chặng 1: Hành Trình Cứu Nước (1911 - 1925)</h3>
+              <div class="badge-sub">MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC</div>
+              <h3 id="timeline-stage-title" class="badge-main-title">Chặng 1: Tìm Đường Cứu Nước (1911 - 1925)</h3>
             </div>
           </div>
           <div class="minigame-stats-row">
-            <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian làm nhiệm vụ">
+            <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian chơi">
               <span class="timer-icon">⏱️</span>
               <strong id="timeline-stopwatch-val">00:00</strong>
             </div>
@@ -215,31 +216,48 @@
               <span>ĐIỂM:</span>
               <strong id="timeline-score-val">0đ</strong>
             </div>
+            <div class="minigame-combo-pill" id="timeline-combo-pill">
+              <span>COMBO</span>
+              <strong id="timeline-combo-val">x1</strong>
+            </div>
             <button class="btn-minigame-exit" id="btn-timeline-back" title="Về Màn Hình Chính">✖ Rời Game</button>
           </div>
         </div>
 
-        <!-- Hướng dẫn cách chơi -->
-        <div class="minigame-instruction-bar">
-          <span>💡 <strong>Cách chơi:</strong> Chọn thẻ sự kiện bên dưới rồi bấm vào mốc năm tương ứng trên trục thời gian (hoặc kéo thả chuột trực tiếp).</span>
-        </div>
-
-        <!-- Trục thời gian (Timeline Track) -->
-        <div class="timeline-track-wrapper">
-          <div class="timeline-axis-line"></div>
-          <div class="timeline-slots-grid" id="timeline-track-slots">
-            <!-- Sinh tự động từ minigames.js -->
+        <!-- Thanh đếm ngược siêu tốc từng câu (10 giây) -->
+        <div class="speed-timer-bar-wrapper">
+          <div class="speed-timer-info">
+            <span class="speed-timer-label">⏳ THỜI GIAN GHIM MỐC:</span>
+            <strong class="speed-timer-num" id="speed-countdown-num">10s</strong>
+            <span class="speed-step-indicator" id="speed-step-indicator">Sự kiện 1 / 5</span>
+          </div>
+          <div class="speed-progress-track">
+            <div class="speed-progress-fill" id="speed-progress-fill"></div>
           </div>
         </div>
 
-        <!-- Kho sự kiện cần sắp xếp (Draggable Cards Dock) -->
-        <div class="timeline-dock-wrapper">
-          <div class="dock-header">
-            <span>📜 CÁC SỰ KIỆN LỊCH SỬ CẦN ĐỊNH VỊ:</span>
-            <small>Chạm thẻ để chọn ➜ Chạm mốc thời gian</small>
+        <!-- Trục tiến trình các mốc thời gian đã ghim thành công (Timeline Ribbon) -->
+        <div class="timeline-pinned-ribbon" id="timeline-pinned-ribbon">
+          <!-- Render tự động các mốc sao vàng đã ghim -->
+        </div>
+
+        <!-- Thẻ Sự Kiện Trung Tâm Cần Định Vị (Event Mission Card) -->
+        <div class="speed-event-card" id="speed-event-card">
+          <div class="speed-card-glow"></div>
+          <div class="speed-card-header">
+            <span class="speed-card-badge" id="speed-card-badge">📜 SỰ KIỆN LỊCH SỬ</span>
+            <span class="speed-card-icon" id="speed-card-icon">🚢</span>
           </div>
-          <div class="timeline-cards-flex" id="timeline-cards-dock">
-            <!-- Sinh tự động từ minigames.js -->
+          <h4 class="speed-event-title" id="speed-event-title">Khởi đầu hành trình bôn ba ba đại dương</h4>
+          <p class="speed-event-desc" id="speed-event-desc">Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô đốc Latouche-Tréville rời Bến cảng Nhà Rồng ra đi tìm con đường cứu nước.</p>
+          <div class="speed-event-hint" id="speed-event-hint">💡 Gợi ý: Bến Nhà Rồng - Tàu buôn Pháp</div>
+        </div>
+
+        <!-- Lưới Nút Chọn Mốc Năm (Timeline Year Buttons Grid) -->
+        <div class="speed-years-section">
+          <div class="speed-years-prompt">👇 CHẠM NHANH VÀO NĂM DIỄN RA SỰ KIỆN TRÊN:</div>
+          <div class="speed-years-grid" id="speed-years-grid">
+            <!-- Sinh tự động các nút mốc năm từ minigames.js -->
           </div>
         </div>
       </div>

@@ -2121,6 +2121,39 @@ html, body {
   box-shadow: 0 0 15px rgba(255, 87, 34, 0.4);
 }
 
+.minigame-combo-pill {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.25) 0%, rgba(230, 81, 0, 0.35) 100%);
+  border: 1px solid rgba(255, 193, 7, 0.7);
+  border-radius: 12px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 0 12px rgba(255, 152, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.minigame-combo-pill span {
+  font-size: 0.76rem;
+  color: var(--gold-primary);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.minigame-combo-pill strong {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 193, 7, 0.8);
+}
+
+.minigame-combo-pill.combo-active {
+  border-color: #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), inset 0 0 8px rgba(255, 215, 0, 0.4);
+  transform: scale(1.04);
+}
+
+
 .btn-minigame-exit {
   background: rgba(30, 20, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -2151,205 +2184,343 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ================= MÀN 1: TRỤC THỜI GIAN ================= */
-.timeline-track-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 14px;
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  padding: 16px 14px;
-  margin-bottom: 14px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  flex-shrink: 0;
-  min-height: 180px;
-  -webkit-overflow-scrolling: touch;
+/* ================= MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC ================= */
+.speed-timeline-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  max-width: 900px !important;
+  gap: 12px;
+  padding: 18px 24px;
 }
 
-.timeline-axis-line {
-  position: absolute;
-  top: 50%;
-  left: 10px;
-  width: calc(100% - 20px);
-  min-width: 740px;
-  height: 4px;
-  background: linear-gradient(90deg, #ffd700 0%, #ff5722 50%, #ffd700 100%);
-  border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  z-index: 1;
-}
-
-.timeline-slots-grid {
-  display: flex;
-  justify-content: flex-start;
-  gap: 14px;
-  position: relative;
-  z-index: 2;
-  min-width: 760px;
-  padding: 2px 4px 6px 4px;
-}
-
-.timeline-slot-dropzone {
-  flex: 0 0 142px;
-  width: 142px;
-  min-width: 142px;
-  min-height: 140px;
-  background: rgba(20, 14, 12, 0.94);
-  border: 2px dashed rgba(212, 175, 55, 0.45);
-  border-radius: 14px;
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
-}
-
-.timeline-slot-dropzone:hover,
-.timeline-slot-dropzone.drag-over {
-  border-color: var(--gold-glow);
-  background: rgba(45, 30, 24, 0.95);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.35);
-}
-
-.timeline-slot-dropzone.completed {
-  border: 2px solid #4caf50;
-  background: rgba(20, 35, 22, 0.92);
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
-}
-
-.slot-year-tag {
-  font-family: var(--font-heading);
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: var(--gold-glow);
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-  width: 100%;
-  text-align: center;
-}
-
-.slot-drop-target {
-  width: 100%;
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.slot-placeholder-hint {
-  font-size: 0.8rem;
-  color: rgba(207, 194, 168, 0.6);
-  line-height: 1.3;
-  font-style: italic;
-}
-
-/* Dock Sự Kiện Cần Xếp */
-.timeline-dock-wrapper {
+/* Thanh Đếm Ngược Siêu Tốc (10s) */
+.speed-timer-bar-wrapper {
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 10px 16px;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
-.dock-header {
+.speed-timer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.speed-timer-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  letter-spacing: 0.5px;
+}
+
+.speed-timer-num {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #4caf50;
+  text-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+  transition: color 0.25s ease;
+}
+
+.speed-timer-num.urgent {
+  color: #ff3d00 !important;
+  text-shadow: 0 0 12px rgba(255, 61, 0, 0.9) !important;
+  animation: urgentBlink 0.4s infinite alternate;
+}
+
+.speed-step-indicator {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--parchment-dim);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.speed-progress-track {
+  width: 100%;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.speed-progress-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 6px;
+  transition: width 0.05s linear, background 0.3s ease;
+}
+
+.speed-progress-fill.color-green {
+  background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+}
+
+.speed-progress-fill.color-yellow {
+  background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+  box-shadow: 0 0 12px rgba(255, 152, 0, 0.75);
+}
+
+.speed-progress-fill.color-red {
+  background: linear-gradient(90deg, #f44336 0%, #d50000 100%);
+  box-shadow: 0 0 14px rgba(244, 67, 54, 0.9);
+}
+
+/* Dải Ruy Băng Các Mốc Đã Ghim Thành Công */
+.timeline-pinned-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px dashed rgba(212, 175, 55, 0.35);
+  min-height: 44px;
+}
+
+.pinned-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--font-heading);
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pinned-node.pending {
+  background: rgba(30, 22, 18, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: rgba(207, 194, 168, 0.55);
+}
+
+.pinned-node.current {
+  background: rgba(245, 158, 11, 0.25);
+  border: 1.5px solid var(--gold-glow);
+  color: var(--gold-glow);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.5);
+  transform: scale(1.06);
+}
+
+.pinned-node.completed {
+  background: linear-gradient(135deg, rgba(46, 125, 50, 0.85) 0%, rgba(27, 94, 32, 0.95) 100%);
+  border: 1.5px solid #81c784;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+}
+
+/* Thẻ Nhiệm Vụ Sự Kiện Trung Tâm */
+.speed-event-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(40, 26, 22, 0.96) 0%, rgba(20, 14, 12, 0.98) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.55);
+  border-radius: 18px;
+  padding: 18px 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(245, 158, 11, 0.2);
+  text-align: left;
+  transition: all 0.25s ease;
+}
+
+.speed-card-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.speed-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-  font-size: 0.82rem;
+}
+
+.speed-card-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid var(--gold-primary);
   color: var(--gold-primary);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
   font-weight: 800;
-  flex-wrap: wrap;
-  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.dock-header small {
-  color: var(--parchment-dim);
-  font-weight: normal;
+.speed-card-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
 }
 
-.timeline-cards-flex {
+.speed-event-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+  line-height: 1.35;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.speed-event-desc {
+  font-size: 0.94rem;
+  color: var(--parchment);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.speed-event-hint {
+  font-size: 0.82rem;
+  color: var(--gold-glow);
+  background: rgba(255, 215, 0, 0.08);
+  border-left: 3px solid var(--gold-primary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+/* Animations Thẻ */
+.card-slide-in {
+  animation: speedCardSlideIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.correct-pulse {
+  animation: speedCorrectPulse 0.6s ease-in-out;
+}
+
+.error-shake {
+  animation: speedErrorShake 0.45s ease-in-out;
+}
+
+@keyframes speedCardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes speedCorrectPulse {
+  0% { transform: scale(1); border-color: #4caf50; }
+  50% { transform: scale(1.02); border-color: #81c784; box-shadow: 0 0 35px rgba(76, 175, 80, 0.8); }
+  100% { transform: scale(1); border-color: rgba(212, 175, 55, 0.55); }
+}
+
+@keyframes speedErrorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); border-color: #f44336; }
+  40%, 80% { transform: translateX(8px); border-color: #f44336; }
+}
+
+@keyframes urgentBlink {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.65; transform: scale(1.12); }
+}
+
+@keyframes revealBlink {
+  from { opacity: 0.7; }
+  to { opacity: 1; box-shadow: 0 0 20px #4caf50; }
+}
+
+/* Lưới Nút Chọn Mốc Năm (Grid) */
+.speed-years-section {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.speed-years-prompt {
+  font-family: var(--font-heading);
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  text-align: center;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.speed-years-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   width: 100%;
 }
 
-.timeline-event-card {
-  background: linear-gradient(135deg, rgba(42, 28, 24, 0.95) 0%, rgba(26, 18, 16, 0.98) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: grab;
-  width: 100%;
-  max-width: 100%;
+.speed-year-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  padding: 14px 10px;
+  min-height: 54px;
+  background: linear-gradient(135deg, rgba(36, 26, 22, 0.95) 0%, rgba(22, 16, 14, 0.98) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.45);
+  border-radius: 12px;
+  color: var(--parchment);
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
   user-select: none;
 }
 
-.timeline-event-card:hover {
+.speed-year-btn:hover {
   border-color: var(--gold-glow);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 22px rgba(255, 193, 7, 0.35);
+  background: linear-gradient(135deg, rgba(58, 40, 32, 0.95) 0%, rgba(36, 24, 20, 0.98) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(255, 193, 7, 0.35);
+  color: #fff;
 }
 
-.timeline-event-card.selected {
-  border-color: #ffeb3b;
-  box-shadow: 0 0 20px #ffeb3b, inset 0 0 10px rgba(255, 235, 59, 0.3);
-  transform: translateY(-4px) scale(1.03);
+.speed-year-btn:active {
+  transform: scale(0.96);
 }
 
-.timeline-event-card.dragging {
-  opacity: 0.4;
+.speed-year-btn.btn-correct-glow {
+  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
+  border-color: #81c784 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(76, 175, 80, 0.9), inset 0 0 10px rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.05) !important;
 }
 
-.timeline-event-card.slotted-success {
-  max-width: 100%;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  cursor: default;
-  padding: 2px;
+.speed-year-btn.btn-reveal-correct {
+  background: linear-gradient(135deg, #1b5e20 0%, #0d3810 100%) !important;
+  border-color: #4caf50 !important;
+  color: #81c784 !important;
+  animation: revealBlink 0.6s infinite alternate !important;
 }
 
-.timeline-event-card.slotted-success .card-desc-text {
-  font-size: 0.76rem;
-  color: #c8e6c9;
-  font-weight: 600;
-  text-align: center;
+.speed-year-btn.btn-wrong {
+  background: linear-gradient(135deg, #b71c1c 0%, #7f0000 100%) !important;
+  border-color: #ef5350 !important;
+  color: #ffcdd2 !important;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.8) !important;
 }
 
-.card-desc-text {
-  font-size: 0.84rem;
-  line-height: 1.35;
-  color: var(--parchment);
-}
-
-.card-badge-icon {
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
 
 /* ================= MÀN 2: GIẢI MÃ ĐIỆN TÍN ================= */
 .cipher-columns-grid {
@@ -2890,88 +3061,98 @@ html, body {
     border-radius: 8px;
   }
 
-  /* Màn 1: Trục thời gian tối ưu cho ngón tay chạm */
-  .timeline-track-wrapper {
-    min-height: auto;
-    padding: 8px 6px;
-    margin-bottom: 8px;
-    border-radius: 12px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  /* Màn 1: Ghim Dòng Thời Gian Siêu Tốc trên Mobile */
+  .speed-timeline-container {
+    padding: 10px 10px !important;
+    gap: 8px !important;
+    max-height: 96vh !important;
+    max-height: 96dvh !important;
   }
-  .timeline-slots-grid {
-    display: flex;
-    gap: 8px;
-    padding: 4px 2px;
-    min-width: min-content;
+  .speed-timer-bar-wrapper {
+    padding: 6px 10px;
+    border-radius: 10px;
   }
-  .timeline-slot-dropzone {
-    flex: 0 0 115px;
-    width: 115px;
-    min-width: 115px;
-    min-height: 105px;
-    padding: 6px;
-    border-radius: 12px;
-    box-sizing: border-box;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: all 0.25s ease;
-  }
-  .timeline-slot-dropzone.pulse-target {
-    border-color: var(--gold-primary) !important;
-    box-shadow: 0 0 18px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 215, 0, 0.3) !important;
-    animation: pulseSlotTarget 1.2s infinite alternate ease-in-out;
-  }
-  @keyframes pulseSlotTarget {
-    0% { transform: scale(1); border-color: rgba(255, 215, 0, 0.6); }
-    100% { transform: scale(1.04); border-color: #fffde7; }
-  }
-  .slot-year-tag {
-    font-size: 1.1rem;
+  .speed-timer-info {
     margin-bottom: 4px;
-    padding-bottom: 2px;
   }
-  .slot-placeholder-hint {
-    font-size: 0.7rem;
-    line-height: 1.2;
+  .speed-timer-label {
+    font-size: 0.72rem;
   }
-
-  /* Kho thẻ sự kiện dưới chân màn hình */
-  .timeline-dock-wrapper {
-    padding: 8px;
-    max-height: 44vh;
-    overflow-y: auto;
+  .speed-timer-num {
+    font-size: 1.15rem;
+  }
+  .speed-step-indicator {
+    font-size: 0.72rem;
+    padding: 2px 6px;
+  }
+  .speed-progress-track {
+    height: 7px;
+  }
+  .timeline-pinned-ribbon {
+    padding: 4px 6px;
+    gap: 4px;
+    min-height: 36px;
+    border-radius: 8px;
+  }
+  .pinned-node {
+    font-size: 0.72rem;
+    padding: 3px 8px;
     border-radius: 12px;
-    -webkit-overflow-scrolling: touch;
   }
-  .dock-header {
-    font-size: 0.74rem;
+  .speed-event-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border-width: 1.5px;
+  }
+  .speed-card-header {
     margin-bottom: 6px;
   }
-  .timeline-cards-flex {
-    grid-template-columns: 1fr;
-    gap: 7px;
+  .speed-card-badge {
+    font-size: 0.68rem;
+    padding: 2px 7px;
   }
-  .timeline-event-card {
-    min-height: 48px;
-    padding: 9px 11px;
-    gap: 9px;
-    border-radius: 10px;
-    touch-action: manipulation;
-    cursor: pointer;
+  .speed-card-icon {
+    font-size: 1.4rem;
   }
-  .timeline-event-card.selected {
-    border-color: var(--gold-primary);
-    box-shadow: 0 0 16px rgba(255, 215, 0, 0.8);
-    transform: scale(1.015);
-  }
-  .timeline-event-card .card-badge-icon {
+  .speed-event-title {
     font-size: 1.05rem;
-  }
-  .card-desc-text {
-    font-size: 0.8rem;
+    margin-bottom: 5px;
     line-height: 1.3;
   }
+  .speed-event-desc {
+    font-size: 0.84rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .speed-event-hint {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  .speed-years-prompt {
+    font-size: 0.76rem;
+    margin-bottom: 6px;
+  }
+  .speed-years-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .speed-year-btn {
+    min-height: 48px;
+    padding: 8px 4px;
+    font-size: 1.15rem;
+    border-radius: 10px;
+  }
+  .minigame-combo-pill {
+    padding: 3px 8px;
+    border-radius: 8px;
+  }
+  .minigame-combo-pill span {
+    font-size: 0.68rem;
+  }
+  .minigame-combo-pill strong {
+    font-size: 0.95rem;
+  }
+
 
   /* Màn 2: Thẻ điện tín trên Mobile */
   .cipher-card-item {

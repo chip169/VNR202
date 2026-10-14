@@ -314,6 +314,10 @@ class HistoricalQuizApp {
     if (tlBack) {
       tlBack.addEventListener('click', () => {
         soundEngine.playClick();
+        if (this.miniGames) {
+          this.miniGames.clearSpeedTimer();
+          this.miniGames.stopStopwatch();
+        }
         this.switchScreen('start-screen');
       });
     }
@@ -321,6 +325,9 @@ class HistoricalQuizApp {
     if (cpBack) {
       cpBack.addEventListener('click', () => {
         soundEngine.playClick();
+        if (this.miniGames) {
+          this.miniGames.stopStopwatch();
+        }
         this.switchScreen('start-screen');
       });
     }

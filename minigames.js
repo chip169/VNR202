@@ -1,36 +1,88 @@
-// Dữ liệu & Logic Mini-game: Trục Thời Gian & Giải Mã Điện Tín Lịch Sử 1930
+// Dữ liệu & Logic Mini-game: Trục Thời Gian Siêu Tốc & Giải Mã Điện Tín Lịch Sử 1930
 
-const TIMELINE_LEVELS = [
+const SPEED_TIMELINE_STAGES = [
   {
-    title: "Chặng 1: Hành Trình Tìm Đường Cứu Nước (1911 - 1925)",
-    slots: [
-      { year: "1911", title: "Rời Bến Cảng Nhà Rồng", hint: "Tàu buôn Đô đốc Latouche-Tréville ra khơi" },
-      { year: "1920", title: "Đại Hội Tours (Pháp)", hint: "Đọc Luận cương Lênin, gia nhập Quốc tế III" },
-      { year: "1923", title: "Thành Lập Tâm Tâm Xã", hint: "Tổ chức cách mạng cấp tiến tại Quảng Châu" },
-      { year: "1924", title: "Tiếng Bom Sa Diện", hint: "Phạm Hồng Thái mưu sát Toàn quyền Merlin" },
-      { year: "1925", title: "Hội VN Cách Mạng Thanh Niên", hint: "Xuất bản báo Thanh Niên tại Quảng Châu" }
-    ],
-    cards: [
-      { id: "c1911", year: "1911", label: "Người thanh niên Nguyễn Tất Thành rời Bến cảng Nhà Rồng tìm đường cứu nước", era: "1911" },
-      { id: "c1920", year: "1920", label: "Nguyễn Ái Quốc đọc Sơ thảo Luận cương Lênin và bỏ phiếu gia nhập Quốc tế III", era: "1920" },
-      { id: "c1923", year: "1923", label: "Nhóm thanh niên yêu nước Lê Hồng Sơn, Hồ Tùng Mậu thành lập Tâm Tâm Xã", era: "1923" },
-      { id: "c1924", year: "1924", label: "Phạm Hồng Thái ném bom Sa Diện gây chấn động dư luận quốc tế", era: "1924" },
-      { id: "c1925", year: "1925", label: "Nguyễn Ái Quốc sáng lập Hội Việt Nam Cách mạng Thanh niên tại Quảng Châu", era: "1925" }
+    title: "Chặng 1: Tìm Đường Cứu Nước & Chuẩn Bị Lực Lượng (1911 - 1925)",
+    yearOptions: ["1911", "1917", "1919", "1920", "1923", "1924", "1925", "1926"],
+    events: [
+      {
+        id: "ev-1911",
+        year: "1911",
+        title: "Khởi Đầu Hải Trình Bôn Ba Ba Đại Dương",
+        desc: "Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô đốc Latouche-Tréville rời Bến cảng Nhà Rồng ra đi tìm con đường giải phóng cho dân tộc.",
+        hint: "Bến cảng Nhà Rồng (Sài Gòn) - Nghề phụ bếp Văn Ba",
+        icon: "🚢"
+      },
+      {
+        id: "ev-1917",
+        year: "1917",
+        title: "Ngọn Hải Đăng Cách Mạng Tháng Mười Nga",
+        desc: "Thắng lợi của Cách mạng Xã hội chủ nghĩa Tháng Mười rung chuyển thế giới, mở ra thời đại mới thức tỉnh phong trào giải phóng các dân tộc thuộc địa.",
+        hint: "Mùa thu nước Nga - Lãnh tụ V.I.Lênin - Quốc tế Cộng sản",
+        icon: "🌍"
+      },
+      {
+        id: "ev-1920",
+        year: "1920",
+        title: "Bỏ Phiếu Gia Nhập Quốc Tế III & Đọc Sơ Thảo Luận Cương",
+        desc: "Tại Đại hội Tours (Pháp), Nguyễn Ái Quốc đọc Sơ thảo Luận cương của Lênin, tìm thấy con đường cứu nước duy nhất: Con đường cách mạng vô sản.",
+        hint: "Thủ đô Paris (Pháp) - Báo L'Humanité (Nhân đạo)",
+        icon: "📜"
+      },
+      {
+        id: "ev-1924",
+        year: "1924",
+        title: "Tiếng Bom Sa Diện Vang Dội",
+        desc: "Chiến sĩ anh hùng Phạm Hồng Thái ném bom mưu sát Toàn quyền Merlin rồi gieo mình xuống dòng Châu Giang, 'như cánh én nhỏ báo hiệu mùa xuân'.",
+        hint: "Khách sạn Victoria - Tô giới Sa Diện (Quảng Châu)",
+        icon: "⚡"
+      },
+      {
+        id: "ev-1925",
+        year: "1925",
+        title: "Thành Lập Hội Việt Nam Cách Mạng Thanh Niên",
+        desc: "Tổ chức tiền thân trực tiếp chuẩn bị về chính trị, tư tưởng và tổ chức cho sự ra đời của Đảng được sáng lập và xuất bản tuần báo Thanh Niên.",
+        hint: "Nhóm Cộng sản đoàn làm nòng cốt - Quảng Châu",
+        icon: "📰"
+      }
     ]
   },
   {
     title: "Chặng 2: Bước Ngoặt Khai Sinh Chính Đảng (1927 - 1930)",
-    slots: [
-      { year: "1927", title: "Tác Phẩm Đường Kách Mệnh", hint: "Vũ khí tư tưởng gối đầu giường của chiến sĩ CS" },
-      { year: "1928", title: "Phong Trào Vô Sản Hóa", hint: "Cán bộ thâm nhập hầm mỏ than, xí nghiệp" },
-      { year: "1929", title: "Ba Tổ Chức Cộng Sản Ra Đời", hint: "Đông Dương CS Đảng, An Nam CS Đảng, ĐD CS Liên đoàn" },
-      { year: "1930", title: "Hội Nghị Hợp Nhất Cửu Long", hint: "Thành lập Đảng Cộng sản Việt Nam (3/2/1930)" }
-    ],
-    cards: [
-      { id: "c1927", year: "1927", label: "Xuất bản cuốn sách lý luận kinh điển 'Đường Kách mệnh' tại Quảng Châu", era: "1927" },
-      { id: "c1928", year: "1928", label: "Kỳ bộ Bắc Kỳ phát động phong trào 'Vô sản hóa' đưa cán bộ vào nhà máy hầm mỏ", era: "1928" },
-      { id: "c1929", year: "1929", label: "Sự phân hóa và xuất hiện của ba tổ chức cộng sản nối tiếp nhau trên cả ba kỳ", era: "1929" },
-      { id: "c1930", year: "1930", label: "Nguyễn Ái Quốc chủ trì Hội nghị hợp nhất thành lập Đảng Cộng sản Việt Nam", era: "1930" }
+    yearOptions: ["1926", "1927", "1928", "1929", "1930", "1931"],
+    events: [
+      {
+        id: "ev-1927",
+        year: "1927",
+        title: "Xuất Bản Cuốn Sách Lý Luận 'Đường Kách Mệnh'",
+        desc: "Tập hợp các bài giảng huấn luyện chính trị của Nguyễn Ái Quốc, trang bị lý luận chủ nghĩa Mác - Lênin cốt lõi cho phong trào cách mạng Việt Nam.",
+        hint: "Vũ khí tư tưởng gối đầu giường - Đào tạo cán bộ tại Quảng Châu",
+        icon: "📖"
+      },
+      {
+        id: "ev-1928",
+        year: "1928",
+        title: "Cao Trào Phong Trào 'Vô Sản Hóa'",
+        desc: "Kỳ bộ Bắc Kỳ phát động chủ trương đưa cán bộ thâm nhập vào hầm mỏ than, xí nghiệp, đồn điền cùng ăn, cùng ở, cùng lao động với giai cấp công nhân.",
+        hint: "Mỏ than Hòn Gai - Nhà máy xi măng Hải Phòng",
+        icon: "⚒️"
+      },
+      {
+        id: "ev-1929",
+        year: "1929",
+        title: "Sự Phân Hóa & Xuất Hiện Ba Tổ Chức Cộng Sản",
+        desc: "Phong trào phát triển mạnh mẽ dẫn tới sự ra đời nối tiếp của Đông Dương Cộng sản Đảng, An Nam Cộng sản Đảng và Đông Dương Cộng sản Liên đoàn.",
+        hint: "Chi bộ số 5D Hàm Long - Khách sạn Phong Cảnh (Sài Gòn)",
+        icon: "🔥"
+      },
+      {
+        id: "ev-1930",
+        year: "1930",
+        title: "Hội Nghị Hợp Nhất Thành Lập Đảng Cộng Sản Việt Nam",
+        desc: "Nguyễn Ái Quốc với tư cách phái viên Quốc tế Cộng sản chủ trì Hội nghị tại bán đảo Cửu Long, thống nhất các tổ chức cộng sản thành một chính đảng duy nhất.",
+        hint: "Mùa xuân lịch sử 3/2/1930 - Bán đảo Cửu Long (Hương Cảng)",
+        icon: "⭐"
+      }
     ]
   }
 ];
@@ -77,12 +129,18 @@ class MiniGameEngine {
   constructor(appRef) {
     this.app = appRef;
     
-    // Timeline state
-    this.timelineLevelIdx = 0;
+    // Speed Timeline state (Màn 1 mới: Ghim sự kiện siêu tốc)
+    this.speedStageIdx = 0;
+    this.speedEventIdx = 0;
     this.timelineScore = 0;
-    this.selectedCardId = null;
+    this.speedCombo = 1;
+    this.speedMaxCombo = 1;
+    this.speedCountdownTimer = null;
+    this.speedRemainingMs = 10000; // 10 giây
+    this.isSpeedLocked = false;
+    this.pinnedYears = [];
     
-    // Cipher state
+    // Cipher state (Màn 2)
     this.selectedHero = null;
     this.selectedEvent = null;
     this.selectedLocale = null;
@@ -122,166 +180,261 @@ class MiniGameEngine {
     }
   }
 
-  // ================= 1. MINI-GAME: TRỤC THỜI GIAN =================
+  // ================= 1. MINI-GAME MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC =================
   startTimelineGame() {
-    this.timelineLevelIdx = 0;
+    this.speedStageIdx = 0;
+    this.speedEventIdx = 0;
     this.timelineScore = 0;
+    this.speedCombo = 1;
+    this.speedMaxCombo = 1;
+    this.pinnedYears = [];
+    this.isSpeedLocked = false;
     this.gameStartTime = Date.now();
     this.startStopwatch();
+
     this.app.switchScreen('timeline-game-screen');
-    this.loadTimelineStage(this.timelineLevelIdx);
+    this.loadSpeedEvent();
   }
 
-  loadTimelineStage(stageIdx) {
-    const stage = TIMELINE_LEVELS[stageIdx];
+  loadSpeedEvent() {
+    this.clearSpeedTimer();
+    this.isSpeedLocked = false;
+
+    const stage = SPEED_TIMELINE_STAGES[this.speedStageIdx];
     if (!stage) {
-      // Hoàn thành cả 2 chặng timeline -> Chuyển tiếp sang Màn 2: Giải Mã Điện Tín
       this.finishTimelineToCipher();
       return;
     }
 
-    this.selectedCardId = null;
-    document.getElementById('timeline-stage-title').innerText = stage.title;
-    document.getElementById('timeline-score-val').innerText = `${this.timelineScore}đ`;
-
-    // Render Slots trên trục thời gian
-    const trackEl = document.getElementById('timeline-track-slots');
-    trackEl.innerHTML = '';
-    stage.slots.forEach(slot => {
-      const slotBox = document.createElement('div');
-      slotBox.className = 'timeline-slot-dropzone';
-      slotBox.dataset.year = slot.year;
-      slotBox.innerHTML = `
-        <div class="slot-year-tag">${slot.year}</div>
-        <div class="slot-drop-target" id="slot-target-${slot.year}">
-          <span class="slot-placeholder-hint">${slot.title}</span>
-        </div>
-      `;
-      
-      // Hỗ trợ Click to Drop
-      slotBox.addEventListener('click', () => this.handleSlotClick(slot.year, slotBox));
-
-      // Hỗ trợ Drag & Drop HTML5
-      slotBox.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        slotBox.classList.add('drag-over');
-      });
-      slotBox.addEventListener('dragleave', () => slotBox.classList.remove('drag-over'));
-      slotBox.addEventListener('drop', (e) => {
-        e.preventDefault();
-        slotBox.classList.remove('drag-over');
-        const cardId = e.dataTransfer.getData('text/plain');
-        this.verifyAndDropCard(cardId, slot.year, slotBox);
-      });
-
-      trackEl.appendChild(slotBox);
-    });
-
-    // Render Thẻ sự kiện xáo trộn
-    const dockEl = document.getElementById('timeline-cards-dock');
-    dockEl.innerHTML = '';
-    const shuffledCards = [...stage.cards].sort(() => 0.5 - Math.random());
-    shuffledCards.forEach(card => {
-      const cardEl = document.createElement('div');
-      cardEl.className = 'timeline-event-card';
-      cardEl.id = `card-${card.id}`;
-      cardEl.dataset.id = card.id;
-      cardEl.dataset.year = card.year;
-      cardEl.draggable = true;
-      cardEl.innerHTML = `
-        <div class="card-glow-edge"></div>
-        <div class="card-badge-icon">📜</div>
-        <div class="card-desc-text">${card.label}</div>
-      `;
-
-      // Click to Select
-      cardEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.handleCardSelect(card.id, cardEl);
-      });
-
-      // Dragstart
-      cardEl.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', card.id);
-        cardEl.classList.add('dragging');
-      });
-      cardEl.addEventListener('dragend', () => cardEl.classList.remove('dragging'));
-
-      dockEl.appendChild(cardEl);
-    });
-  }
-
-  handleCardSelect(cardId, cardEl) {
-    soundEngine.playClick();
-    if (this.selectedCardId === cardId) {
-      this.selectedCardId = null;
-      cardEl.classList.remove('selected');
-      document.querySelectorAll('.timeline-slot-dropzone').forEach(s => s.classList.remove('pulse-target'));
+    if (this.speedEventIdx >= stage.events.length) {
+      // Hoàn thành chặng hiện tại -> Sang chặng tiếp theo
+      this.speedStageIdx++;
+      this.speedEventIdx = 0;
+      this.pinnedYears = [];
+      if (this.speedStageIdx >= SPEED_TIMELINE_STAGES.length) {
+        this.finishTimelineToCipher();
+        return;
+      }
+      soundEngine.playFanfare();
+      const banner = document.getElementById('timeline-stage-title');
+      if (banner) banner.innerText = `🎉 HOÀN THÀNH CHẶNG! TIẾN VÀO CHẶNG ${this.speedStageIdx + 1}...`;
+      setTimeout(() => this.loadSpeedEvent(), 1400);
       return;
     }
 
-    document.querySelectorAll('.timeline-event-card').forEach(c => c.classList.remove('selected'));
-    this.selectedCardId = cardId;
-    cardEl.classList.add('selected');
-    // Làm sáng các mốc năm trên trục thời gian để người chơi trên điện thoại chạm ngay
-    document.querySelectorAll('.timeline-slot-dropzone:not(.completed)').forEach(s => s.classList.add('pulse-target'));
-  }
+    const currentEvent = stage.events[this.speedEventIdx];
 
-  handleSlotClick(year, slotBox) {
-    if (!this.selectedCardId) {
-      // Nếu chạm mốc năm trước khi chọn thẻ -> Rung nhẹ nhắc nhở
-      slotBox.classList.add('slot-hint-pulse');
-      setTimeout(() => slotBox.classList.remove('slot-hint-pulse'), 500);
-      return;
+    // Cập nhật HUD
+    const titleEl = document.getElementById('timeline-stage-title');
+    const scoreEl = document.getElementById('timeline-score-val');
+    const comboEl = document.getElementById('timeline-combo-val');
+    const comboPill = document.getElementById('timeline-combo-pill');
+    const stepEl = document.getElementById('speed-step-indicator');
+
+    if (titleEl) titleEl.innerText = stage.title;
+    if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
+    if (comboEl) comboEl.innerText = `x${this.speedCombo}`;
+    if (comboPill) comboPill.classList.toggle('combo-active', this.speedCombo > 1);
+    if (stepEl) stepEl.innerText = `Sự kiện ${this.speedEventIdx + 1} / ${stage.events.length}`;
+
+    // Cập nhật Ribbon tiến trình các mốc năm
+    const ribbonEl = document.getElementById('timeline-pinned-ribbon');
+    if (ribbonEl) {
+      ribbonEl.innerHTML = '';
+      stage.events.forEach((ev, idx) => {
+        const dot = document.createElement('div');
+        dot.className = 'pinned-node';
+        if (idx < this.speedEventIdx) {
+          dot.classList.add('completed');
+          dot.innerHTML = `<span>⭐</span> <strong>${ev.year}</strong>`;
+        } else if (idx === this.speedEventIdx) {
+          dot.classList.add('current');
+          dot.innerHTML = `<span>⏳</span> <strong>?</strong>`;
+        } else {
+          dot.classList.add('pending');
+          dot.innerHTML = `<span>○</span> <strong>?</strong>`;
+        }
+        ribbonEl.appendChild(dot);
+      });
     }
-    this.verifyAndDropCard(this.selectedCardId, year, slotBox);
+
+    // Hiển thị Thẻ sự kiện trung tâm (KHÔNG HIỆN SỐ NĂM ĐỂ TĂNG ĐỘ KHÓ)
+    const cardIcon = document.getElementById('speed-card-icon');
+    const cardTitle = document.getElementById('speed-event-title');
+    const cardDesc = document.getElementById('speed-event-desc');
+    const cardHint = document.getElementById('speed-event-hint');
+    const cardEl = document.getElementById('speed-event-card');
+
+    if (cardIcon) cardIcon.innerText = currentEvent.icon || '📜';
+    if (cardTitle) cardTitle.innerText = currentEvent.title;
+    if (cardDesc) cardDesc.innerText = currentEvent.desc;
+    if (cardHint) cardHint.innerText = `💡 Gợi ý: ${currentEvent.hint}`;
+
+    if (cardEl) {
+      cardEl.classList.remove('card-slide-in', 'correct-pulse', 'error-shake');
+      void cardEl.offsetWidth; // Trigger reflow
+      cardEl.classList.add('card-slide-in');
+    }
+
+    // Render Lưới Các Mốc Năm Lựa Chọn
+    const gridEl = document.getElementById('speed-years-grid');
+    if (gridEl) {
+      gridEl.innerHTML = '';
+      stage.yearOptions.forEach(year => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'speed-year-btn';
+        btn.dataset.year = year;
+        btn.innerHTML = `<span>${year}</span>`;
+        btn.onclick = () => this.handleSpeedYearPick(year, btn, currentEvent);
+        gridEl.appendChild(btn);
+      });
+    }
+
+    // Khởi động đồng hồ đếm ngược 10 giây
+    this.startSpeedCountdown(currentEvent);
   }
 
-  verifyAndDropCard(cardId, targetYear, slotBox) {
-    const cardEl = document.getElementById(`card-${cardId}`);
-    if (!cardEl) return;
+  startSpeedCountdown(currentEvent) {
+    this.clearSpeedTimer();
+    const totalMs = 10000;
+    this.speedRemainingMs = totalMs;
 
-    const cardYear = cardEl.dataset.year;
-    if (cardYear === targetYear) {
-      // Ghép chính xác!
+    const fillEl = document.getElementById('speed-progress-fill');
+    const numEl = document.getElementById('speed-countdown-num');
+
+    if (fillEl) {
+      fillEl.style.width = '100%';
+      fillEl.className = 'speed-progress-fill color-green';
+    }
+    if (numEl) {
+      numEl.innerText = '10s';
+      numEl.classList.remove('urgent');
+    }
+
+    const intervalTime = 50;
+    this.speedCountdownTimer = setInterval(() => {
+      this.speedRemainingMs -= intervalTime;
+
+      if (this.speedRemainingMs <= 0) {
+        this.clearSpeedTimer();
+        if (fillEl) fillEl.style.width = '0%';
+        if (numEl) numEl.innerText = '0s';
+        this.handleSpeedTimeout(currentEvent);
+        return;
+      }
+
+      const percent = (this.speedRemainingMs / totalMs) * 100;
+      const secLeft = Math.ceil(this.speedRemainingMs / 1000);
+
+      if (fillEl) {
+        fillEl.style.width = `${percent}%`;
+        if (secLeft > 5) {
+          fillEl.className = 'speed-progress-fill color-green';
+        } else if (secLeft > 2) {
+          fillEl.className = 'speed-progress-fill color-yellow';
+        } else {
+          fillEl.className = 'speed-progress-fill color-red';
+        }
+      }
+
+      if (numEl) {
+        numEl.innerText = `${secLeft}s`;
+        if (secLeft <= 3) numEl.classList.add('urgent');
+      }
+    }, intervalTime);
+  }
+
+  clearSpeedTimer() {
+    if (this.speedCountdownTimer) {
+      clearInterval(this.speedCountdownTimer);
+      this.speedCountdownTimer = null;
+    }
+  }
+
+  handleSpeedYearPick(chosenYear, btnEl, currentEvent) {
+    if (this.isSpeedLocked) return;
+
+    if (chosenYear === currentEvent.year) {
+      // Ghép chính xác mốc thời gian!
+      this.isSpeedLocked = true;
+      this.clearSpeedTimer();
       soundEngine.playCorrect();
-      this.timelineScore += 150;
-      document.getElementById('timeline-score-val').innerText = `${this.timelineScore}đ`;
+
+      // Tính điểm thưởng siêu tốc theo thời gian còn lại
+      const timeBonus = Math.floor((this.speedRemainingMs / 10000) * 150);
+      const earned = (150 + timeBonus) * this.speedCombo;
+      this.timelineScore += earned;
+
+      this.speedCombo++;
+      if (this.speedCombo > this.speedMaxCombo) this.speedMaxCombo = this.speedCombo;
+
+      // Cập nhật điểm HUD & Multiplayer
+      const scoreEl = document.getElementById('timeline-score-val');
+      const comboEl = document.getElementById('timeline-combo-val');
+      if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
+      if (comboEl) comboEl.innerText = `x${this.speedCombo}`;
+
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
 
-      document.querySelectorAll('.timeline-slot-dropzone').forEach(s => s.classList.remove('pulse-target'));
-      const targetDropZone = slotBox.querySelector('.slot-drop-target');
-      targetDropZone.innerHTML = '';
-      cardEl.classList.remove('selected');
-      cardEl.classList.add('slotted-success');
-      cardEl.draggable = false;
-      targetDropZone.appendChild(cardEl);
-      slotBox.classList.add('completed');
+      // Hiệu ứng thắng cuộc trên nút và thẻ
+      btnEl.classList.add('btn-correct-glow');
+      const cardEl = document.getElementById('speed-event-card');
+      if (cardEl) cardEl.classList.add('correct-pulse');
 
-      this.selectedCardId = null;
-
-      // Kiểm tra hoàn thành màn
-      const remaining = document.querySelectorAll('#timeline-cards-dock .timeline-event-card').length;
-      if (remaining === 0) {
-        soundEngine.playFanfare();
-        setTimeout(() => {
-          this.timelineLevelIdx++;
-          this.loadTimelineStage(this.timelineLevelIdx);
-        }, 1600);
-      }
+      // Tự động chuyển sự kiện tiếp theo sau 1 giây
+      setTimeout(() => {
+        this.speedEventIdx++;
+        this.loadSpeedEvent();
+      }, 1000);
     } else {
-      // Ghép sai -> Rung lắc cảnh báo
+      // Chọn sai mốc năm -> Cảnh báo rung lắc và trừ chuỗi combo
       soundEngine.playWrong();
-      cardEl.classList.add('error-shake');
-      setTimeout(() => cardEl.classList.remove('error-shake'), 450);
+      btnEl.classList.add('error-shake', 'btn-wrong');
+      setTimeout(() => btnEl.classList.remove('error-shake', 'btn-wrong'), 500);
+
+      this.speedCombo = 1;
+      const comboEl = document.getElementById('timeline-combo-val');
+      const comboPill = document.getElementById('timeline-combo-pill');
+      if (comboEl) comboEl.innerText = `x1`;
+      if (comboPill) comboPill.classList.remove('combo-active');
+
+      this.timelineScore = Math.max(0, this.timelineScore - 40);
+      const scoreEl = document.getElementById('timeline-score-val');
+      if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
     }
   }
 
+  handleSpeedTimeout(currentEvent) {
+    if (this.isSpeedLocked) return;
+    this.isSpeedLocked = true;
+    soundEngine.playWrong();
+
+    // Reset combo
+    this.speedCombo = 1;
+    const comboEl = document.getElementById('timeline-combo-val');
+    if (comboEl) comboEl.innerText = `x1`;
+
+    // Hiển thị mốc năm đúng để người chơi quan sát học hỏi
+    const correctBtn = document.querySelector(`.speed-year-btn[data-year="${currentEvent.year}"]`);
+    if (correctBtn) correctBtn.classList.add('btn-reveal-correct');
+
+    const cardEl = document.getElementById('speed-event-card');
+    if (cardEl) cardEl.classList.add('error-shake');
+
+    setTimeout(() => {
+      this.speedEventIdx++;
+      this.loadSpeedEvent();
+    }, 1500);
+  }
+
   finishTimelineToCipher() {
+    this.clearSpeedTimer();
+    soundEngine.playFanfare();
     const banner = document.getElementById('timeline-stage-title');
-    banner.innerText = "🎉 XUẤT SẮC! TIẾN VÀO MÀN 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG";
+    if (banner) banner.innerText = "🎉 HOÀN THÀNH MÀN 1! TIẾN VÀO MÀN 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG";
     setTimeout(() => {
       this.startCipherGame();
     }, 1800);
