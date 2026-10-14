@@ -233,15 +233,21 @@ class HistoricalQuizApp {
       }
     });
 
-    // 1. Nút "TẠO PHÒNG ĐỐI KHÁNG TRỰC TUYẾN" (Dành cho máy chủ / màn hình chính)
+    // 1. Nút "THAM GIA HỘI NGHỊ 1930"
     const playBtn = document.getElementById('btn-main-play');
     if (playBtn) {
       playBtn.addEventListener('click', () => {
         soundEngine.playClick();
         soundEngine.startAmbient();
-        this.mode = 'multiplayer';
-        this.switchScreen('lobby-screen');
-        this.multiplayer.createRoom('1930-VN');
+        if (window.innerWidth <= 768) {
+          // Trên điện thoại di động: Chuyển thẳng tới màn hình Đăng Ký Đại Biểu
+          this.openJoinScreen('1930-VN');
+        } else {
+          // Trên máy tính / máy chiếu: Tạo phòng và hiển thị mã QR sảnh chờ
+          this.mode = 'multiplayer';
+          this.switchScreen('lobby-screen');
+          this.multiplayer.createRoom('1930-VN');
+        }
       });
     }
 
