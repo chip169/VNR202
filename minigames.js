@@ -128,177 +128,341 @@ const CIPHER_REPORTS = [
 class MiniGameEngine {
   constructor(appRef) {
     this.app = appRef;
-    
-    // Speed Timeline state (Màn 1 mới: Ghim sự kiện siêu tốc)
-    this.speedStageIdx = 0;
-    this.speedEventIdx = 0;
+
+    // Endless Arena State (Đấu trường 10 phút vô tận)
+    this.questionQueue = [];
+    this.currentQuestion = null;
+    this.questionIndex = 0;
     this.timelineScore = 0;
     this.speedCombo = 1;
     this.speedMaxCombo = 1;
+    this.streakCount = 0;
+    this.recentResults = []; // Lưu 8 kết quả gần nhất cho Ribbon tiến trình
+
+    // Countdown & Timers
     this.speedCountdownTimer = null;
-    this.speedRemainingMs = 10000; // 10 giây
+    this.speedRemainingMs = 12000; // 12 giây mỗi câu
+    this.questionTotalMs = 12000;
     this.isSpeedLocked = false;
-    this.pinnedYears = [];
-    
-    // Cipher state (Màn 2)
+    this.freezeTimer = null;
+
+    // Master 10-Minute Room Timer
+    this.gameStartTime = null;
+    this.gameEndTime = null;
+    this.masterTimer = null;
+    this.remainingMasterSeconds = 600; // Mặc định 10 phút (600 giây)
+
+    // Cipher state (Màn 2 hỗ trợ dự phòng)
     this.selectedHero = null;
     this.selectedEvent = null;
     this.selectedLocale = null;
     this.decodedReports = [];
-
-    // Stopwatch & Time Tracking
-    this.gameStartTime = null;
-    this.stopwatchInterval = null;
-    this.elapsedSeconds = 0;
   }
 
   formatTime(totalSec) {
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
+    const mins = Math.floor(Math.max(0, totalSec) / 60);
+    const secs = Math.max(0, totalSec) % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  startStopwatch() {
-    this.stopStopwatch();
+  getFormattedTime() {
+    if (!this.gameStartTime) return "00:00";
+    const elapsed = Math.floor((Date.now() - this.gameStartTime) / 1000);
+    return this.formatTime(elapsed);
+  }
+
+  stopStopwatch() {
+    this.stopMasterTimer();
+  }
+
+  getMultiplier() {
+    if (this.streakCount >= 12) return 3.0;
+    if (this.streakCount >= 8) return 2.5;
+    if (this.streakCount >= 5) return 2.0;
+    if (this.streakCount >= 3) return 1.5;
+    return 1.0;
+  }
+
+  getRankTitle(score) {
+    if (score >= 3000) {
+      return { icon: "👑", title: "Lãnh Tụ Cửu Long", class: "rank-gold" };
+    }
+    if (score >= 1500) {
+      return { icon: "📜", title: "Ủy Viên Hiệp Thương", class: "rank-cyan" };
+    }
+    if (score >= 500) {
+      return { icon: "⚔️", title: "Chiến Sĩ Tiên Phong", class: "rank-bronze" };
+    }
+    return { icon: "🎖️", title: "Tân Đại Biểu", class: "" };
+  }
+
+  // Khởi tạo hàng đợi câu hỏi vô hạn (Endless Queue)
+  initQuestionQueue() {
+    this.questionQueue = [];
+    this.refillQuestionQueue();
+  }
+
+  // Bổ sung và xáo trộn câu hỏi từ ngân hàng 100 câu & timeline
+  refillQuestionQueue() {
+    const pool = [];
+
+    // 1. Thêm các sự kiện Dòng thời gian mốc năm (Timeline Year Events)
+    if (typeof SPEED_TIMELINE_STAGES !== 'undefined') {
+      SPEED_TIMELINE_STAGES.forEach(stage => {
+        stage.events.forEach(ev => {
+          pool.push({
+            type: 'timeline',
+            id: ev.id || `ev-${ev.year}`,
+            badge: '📜 DÒNG THỜI GIAN LỊCH SỬ',
+            icon: ev.icon || '⏳',
+            title: ev.title,
+            desc: ev.desc,
+            hint: ev.hint || '',
+            correctYear: ev.year,
+            yearOptions: stage.yearOptions || ["1911", "1917", "1920", "1924", "1925", "1927", "1928", "1929", "1930"]
+          });
+        });
+      });
+    }
+
+    // 2. Thêm toàn bộ các câu hỏi trắc nghiệm lịch sử Đảng phong phú từ questions.js
+    if (typeof HISTORICAL_QUESTIONS !== 'undefined' && Array.isArray(HISTORICAL_QUESTIONS)) {
+      HISTORICAL_QUESTIONS.forEach(q => {
+        pool.push({
+          type: 'quiz',
+          id: `quiz-${q.id}`,
+          badge: '⭐ TRI THỨC LỊCH SỬ ĐẢNG 1930',
+          icon: '⭐',
+          title: q.question,
+          desc: q.era || 'Hội nghị thành lập Đảng & Bối cảnh cách mạng',
+          hint: q.insight ? (q.insight.length > 90 ? q.insight.substring(0, 88) + '...' : q.insight) : 'Chọn 1 trong 4 phương án đúng',
+          options: q.options,
+          correctIndex: q.correctIndex
+        });
+      });
+    }
+
+    // Xáo trộn ngẫu nhiên (Fisher-Yates Shuffle)
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    this.questionQueue.push(...pool);
+  }
+
+  // ================= 1. BẮT ĐẦU ĐẤU TRƯỜNG 10 PHÚT VÔ TẬN =================
+  startTimelineGame() {
+    this.timelineScore = 0;
+    this.speedCombo = 1;
+    this.speedMaxCombo = 1;
+    this.streakCount = 0;
+    this.questionIndex = 0;
+    this.recentResults = [];
+    this.isSpeedLocked = false;
+    this.gameStartTime = Date.now();
+
+    // Đồng bộ thời gian 10 phút theo phòng (nếu có multiplayer host phát endAt)
+    if (this.app && this.app.multiplayer && this.app.multiplayer.gameEndAt && this.app.multiplayer.gameEndAt > Date.now()) {
+      this.gameEndTime = this.app.multiplayer.gameEndAt;
+      this.remainingMasterSeconds = Math.max(10, Math.floor((this.gameEndTime - Date.now()) / 1000));
+    } else {
+      this.remainingMasterSeconds = 600; // 10 phút mặc định
+      this.gameEndTime = Date.now() + 600000;
+    }
+
+    this.initQuestionQueue();
+    this.startMasterCountdown();
+
+    this.app.switchScreen('timeline-game-screen');
+    this.updateHUD();
+    this.loadNextQuestion();
+  }
+
+  // Vòng lặp đếm ngược 10 phút xuyên suốt màn chơi
+  startMasterCountdown() {
+    this.stopMasterTimer();
     const updateDisplay = () => {
-      if (!this.gameStartTime) return;
-      this.elapsedSeconds = Math.floor((Date.now() - this.gameStartTime) / 1000);
-      const str = this.formatTime(this.elapsedSeconds);
+      const now = Date.now();
+      const secLeft = Math.max(0, Math.floor((this.gameEndTime - now) / 1000));
+      this.remainingMasterSeconds = secLeft;
+      const str = this.formatTime(secLeft);
+
       const tlVal = document.getElementById('timeline-stopwatch-val');
       const cpVal = document.getElementById('cipher-stopwatch-val');
       if (tlVal) tlVal.innerText = str;
       if (cpVal) cpVal.innerText = str;
+
+      // Khi đếm về 00:00 -> Tự động kết thúc trận đấu và xuất bảng xếp hạng
+      if (secLeft <= 0) {
+        this.stopMasterTimer();
+        this.clearSpeedTimer();
+        this.finishAllMiniGames();
+      }
     };
+
     updateDisplay();
-    this.stopwatchInterval = setInterval(updateDisplay, 1000);
+    this.masterTimer = setInterval(updateDisplay, 1000);
   }
 
-  stopStopwatch() {
-    if (this.stopwatchInterval) {
-      clearInterval(this.stopwatchInterval);
-      this.stopwatchInterval = null;
+  stopMasterTimer() {
+    if (this.masterTimer) {
+      clearInterval(this.masterTimer);
+      this.masterTimer = null;
     }
   }
 
-  // ================= 1. MINI-GAME MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC =================
-  startTimelineGame() {
-    this.speedStageIdx = 0;
-    this.speedEventIdx = 0;
-    this.timelineScore = 0;
-    this.speedCombo = 1;
-    this.speedMaxCombo = 1;
-    this.pinnedYears = [];
-    this.isSpeedLocked = false;
-    this.gameStartTime = Date.now();
-    this.startStopwatch();
-
-    this.app.switchScreen('timeline-game-screen');
-    this.loadSpeedEvent();
-  }
-
-  loadSpeedEvent() {
+  // Tải câu hỏi tiếp theo
+  loadNextQuestion() {
     this.clearSpeedTimer();
     this.isSpeedLocked = false;
 
-    const stage = SPEED_TIMELINE_STAGES[this.speedStageIdx];
-    if (!stage) {
-      this.finishTimelineToCipher();
-      return;
+    // Đảm bảo hàng đợi luôn có câu hỏi vô tận
+    if (this.questionQueue.length < 5) {
+      this.refillQuestionQueue();
     }
 
-    if (this.speedEventIdx >= stage.events.length) {
-      // Hoàn thành chặng hiện tại -> Sang chặng tiếp theo
-      this.speedStageIdx++;
-      this.speedEventIdx = 0;
-      this.pinnedYears = [];
-      if (this.speedStageIdx >= SPEED_TIMELINE_STAGES.length) {
-        this.finishTimelineToCipher();
-        return;
-      }
-      soundEngine.playFanfare();
-      const banner = document.getElementById('timeline-stage-title');
-      if (banner) banner.innerText = `🎉 HOÀN THÀNH CHẶNG! TIẾN VÀO CHẶNG ${this.speedStageIdx + 1}...`;
-      setTimeout(() => this.loadSpeedEvent(), 1400);
-      return;
-    }
+    const currentItem = this.questionQueue.shift();
+    this.currentQuestion = currentItem;
+    this.questionIndex++;
 
-    const currentEvent = stage.events[this.speedEventIdx];
+    this.updateHUD();
+    this.renderQuestionCard(currentItem);
+    this.renderOptions(currentItem);
+    this.startQuestionCountdown(currentItem);
+  }
 
-    // Cập nhật HUD
-    const titleEl = document.getElementById('timeline-stage-title');
+  // Cập nhật giao diện HUD (Điểm, Combo, Cấp bậc, Ribbon)
+  updateHUD() {
     const scoreEl = document.getElementById('timeline-score-val');
     const comboEl = document.getElementById('timeline-combo-val');
     const comboPill = document.getElementById('timeline-combo-pill');
     const stepEl = document.getElementById('speed-step-indicator');
+    const rankChip = document.getElementById('player-rank-chip');
+    const rankIcon = document.getElementById('player-rank-icon');
+    const rankName = document.getElementById('player-rank-name');
 
-    if (titleEl) titleEl.innerText = stage.title;
-    if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
-    if (comboEl) comboEl.innerText = `x${this.speedCombo}`;
-    if (comboPill) comboPill.classList.toggle('combo-active', this.speedCombo > 1);
-    if (stepEl) stepEl.innerText = `Sự kiện ${this.speedEventIdx + 1} / ${stage.events.length}`;
+    if (scoreEl) scoreEl.innerText = `${this.timelineScore.toLocaleString()}đ`;
 
-    // Cập nhật Ribbon tiến trình các mốc năm
+    const mult = this.getMultiplier();
+    if (comboEl) comboEl.innerText = `x${mult}`;
+
+    if (comboPill) {
+      comboPill.classList.toggle('combo-active', this.streakCount >= 2);
+      comboPill.classList.toggle('combo-fire', this.streakCount >= 5);
+      comboPill.classList.toggle('combo-lightning', this.streakCount >= 8);
+    }
+
+    if (stepEl) {
+      stepEl.innerText = `Câu ${this.questionIndex} (Chuỗi đúng: ${this.streakCount})`;
+    }
+
+    // Cập nhật Danh hiệu đại biểu theo điểm số
+    const rank = this.getRankTitle(this.timelineScore);
+    if (rankIcon) rankIcon.innerText = rank.icon;
+    if (rankName) rankName.innerText = rank.title;
+    if (rankChip) {
+      rankChip.className = `player-rank-chip ${rank.class}`;
+    }
+
+    // Ribbon mốc tiến trình gần nhất (8 dấu sao/thẻ)
     const ribbonEl = document.getElementById('timeline-pinned-ribbon');
     if (ribbonEl) {
       ribbonEl.innerHTML = '';
-      stage.events.forEach((ev, idx) => {
+      const displayNodes = [...this.recentResults].slice(-7);
+      displayNodes.push({ status: 'current', label: '?' });
+      while (displayNodes.length < 8) {
+        displayNodes.push({ status: 'pending', label: '○' });
+      }
+
+      displayNodes.forEach(node => {
         const dot = document.createElement('div');
-        dot.className = 'pinned-node';
-        if (idx < this.speedEventIdx) {
-          dot.classList.add('completed');
-          dot.innerHTML = `<span>⭐</span> <strong>${ev.year}</strong>`;
-        } else if (idx === this.speedEventIdx) {
-          dot.classList.add('current');
-          dot.innerHTML = `<span>⏳</span> <strong>?</strong>`;
+        dot.className = `pinned-node ${node.status}`;
+        if (node.status === 'correct') {
+          dot.innerHTML = `<span>⭐</span> <strong>${node.label || 'ĐÚNG'}</strong>`;
+        } else if (node.status === 'wrong') {
+          dot.innerHTML = `<span>❌</span> <strong>${node.label || 'SAI'}</strong>`;
+        } else if (node.status === 'current') {
+          dot.innerHTML = `<span>⏳</span> <strong>${this.questionIndex}</strong>`;
         } else {
-          dot.classList.add('pending');
-          dot.innerHTML = `<span>○</span> <strong>?</strong>`;
+          dot.innerHTML = `<span>○</span> <strong>-</strong>`;
         }
         ribbonEl.appendChild(dot);
       });
     }
+  }
 
-    // Hiển thị Thẻ sự kiện trung tâm (KHÔNG HIỆN SỐ NĂM ĐỂ TĂNG ĐỘ KHÓ)
+  // Kết xuất Thẻ Thử Thách Trung Tâm
+  renderQuestionCard(item) {
+    const cardBadge = document.getElementById('speed-card-badge');
     const cardIcon = document.getElementById('speed-card-icon');
     const cardTitle = document.getElementById('speed-event-title');
     const cardDesc = document.getElementById('speed-event-desc');
     const cardHint = document.getElementById('speed-event-hint');
     const cardEl = document.getElementById('speed-event-card');
 
-    if (cardIcon) cardIcon.innerText = currentEvent.icon || '📜';
-    if (cardTitle) cardTitle.innerText = currentEvent.title;
-    if (cardDesc) cardDesc.innerText = currentEvent.desc;
-    if (cardHint) cardHint.innerText = `💡 Gợi ý: ${currentEvent.hint}`;
+    if (cardBadge) cardBadge.innerText = item.badge || '📜 THỬ THÁCH TRI THỨC';
+    if (cardIcon) cardIcon.innerText = item.icon || '⭐';
+    if (cardTitle) cardTitle.innerText = item.title;
+    if (cardDesc) cardDesc.innerText = item.desc;
+    if (cardHint) cardHint.innerText = `💡 ${item.hint}`;
 
     if (cardEl) {
       cardEl.classList.remove('card-slide-in', 'correct-pulse', 'error-shake');
-      void cardEl.offsetWidth; // Trigger reflow
+      void cardEl.offsetWidth; // Force reflow
       cardEl.classList.add('card-slide-in');
     }
+  }
 
-    // Render Lưới Các Mốc Năm Lựa Chọn
+  // Kết xuất các nút lựa chọn (Hỗ trợ cả Timeline Year buttons & Trắc nghiệm 4 đáp án A-B-C-D)
+  renderOptions(item) {
     const gridEl = document.getElementById('speed-years-grid');
-    if (gridEl) {
-      gridEl.innerHTML = '';
-      stage.yearOptions.forEach(year => {
+    const promptEl = document.getElementById('speed-options-prompt');
+    if (!gridEl) return;
+
+    gridEl.innerHTML = '';
+
+    if (item.type === 'timeline') {
+      // Dạng 1: Ghim năm diễn ra sự kiện
+      gridEl.classList.remove('quiz-options-mode');
+      if (promptEl) promptEl.innerText = '👇 CHẠM NHANH VÀO NĂM DIỄN RA SỰ KIỆN:';
+
+      const years = item.yearOptions || ["1911", "1917", "1920", "1924", "1925", "1927", "1928", "1929", "1930"];
+      years.forEach(year => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'speed-year-btn';
         btn.dataset.year = year;
         btn.innerHTML = `<span>${year}</span>`;
-        btn.onclick = () => this.handleSpeedYearPick(year, btn, currentEvent);
+        btn.onclick = () => this.handleOptionPick(year === item.correctYear, btn, item);
+        gridEl.appendChild(btn);
+      });
+    } else {
+      // Dạng 2: Câu hỏi trắc nghiệm 4 phương án A - B - C - D
+      gridEl.classList.add('quiz-options-mode');
+      if (promptEl) promptEl.innerText = '👇 CHẠM VÀO ĐÁP ÁN ĐÚNG NHẤT:';
+
+      const letters = ['A', 'B', 'C', 'D'];
+      item.options.forEach((optText, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quiz-opt-btn';
+        btn.dataset.index = idx;
+        btn.innerHTML = `
+          <span class="quiz-opt-letter">${letters[idx]}</span>
+          <span class="quiz-opt-text">${optText}</span>
+        `;
+        btn.onclick = () => this.handleOptionPick(idx === item.correctIndex, btn, item);
         gridEl.appendChild(btn);
       });
     }
-
-    // Khởi động đồng hồ đếm ngược 10 giây
-    this.startSpeedCountdown(currentEvent);
   }
 
-  startSpeedCountdown(currentEvent) {
+  // Khởi động đếm ngược 12 giây cho câu hỏi
+  startQuestionCountdown(item) {
     this.clearSpeedTimer();
-    const totalMs = 10000;
-    this.speedRemainingMs = totalMs;
+    this.questionTotalMs = 12000;
+    this.speedRemainingMs = this.questionTotalMs;
 
     const fillEl = document.getElementById('speed-progress-fill');
     const numEl = document.getElementById('speed-countdown-num');
@@ -308,7 +472,7 @@ class MiniGameEngine {
       fillEl.className = 'speed-progress-fill color-green';
     }
     if (numEl) {
-      numEl.innerText = '10s';
+      numEl.innerText = '12s';
       numEl.classList.remove('urgent');
     }
 
@@ -320,18 +484,18 @@ class MiniGameEngine {
         this.clearSpeedTimer();
         if (fillEl) fillEl.style.width = '0%';
         if (numEl) numEl.innerText = '0s';
-        this.handleSpeedTimeout(currentEvent);
+        this.handleQuestionTimeout(item);
         return;
       }
 
-      const percent = (this.speedRemainingMs / totalMs) * 100;
+      const percent = (this.speedRemainingMs / this.questionTotalMs) * 100;
       const secLeft = Math.ceil(this.speedRemainingMs / 1000);
 
       if (fillEl) {
         fillEl.style.width = `${percent}%`;
-        if (secLeft > 5) {
+        if (secLeft > 6) {
           fillEl.className = 'speed-progress-fill color-green';
-        } else if (secLeft > 2) {
+        } else if (secLeft > 3) {
           fillEl.className = 'speed-progress-fill color-yellow';
         } else {
           fillEl.className = 'speed-progress-fill color-red';
@@ -352,92 +516,149 @@ class MiniGameEngine {
     }
   }
 
-  handleSpeedYearPick(chosenYear, btnEl, currentEvent) {
+  // Xử lý khi người chơi bấm chọn đáp án
+  handleOptionPick(isCorrect, btnEl, item) {
     if (this.isSpeedLocked) return;
+    this.isSpeedLocked = true;
+    this.clearSpeedTimer();
 
-    if (chosenYear === currentEvent.year) {
-      // Ghép chính xác mốc thời gian!
-      this.isSpeedLocked = true;
-      this.clearSpeedTimer();
+    if (isCorrect) {
+      // TRẢ LỜI ĐÚNG!
       soundEngine.playCorrect();
 
-      // Tính điểm thưởng siêu tốc theo thời gian còn lại
-      const timeBonus = Math.floor((this.speedRemainingMs / 10000) * 150);
-      const earned = (150 + timeBonus) * this.speedCombo;
+      // Điểm cơ bản 100đ + Thưởng tốc độ theo thời gian còn lại (tối đa 100đ)
+      const timeBonus = Math.floor((this.speedRemainingMs / this.questionTotalMs) * 100);
+      const mult = this.getMultiplier();
+      const earned = Math.round((100 + timeBonus) * mult);
       this.timelineScore += earned;
 
-      this.speedCombo++;
-      if (this.speedCombo > this.speedMaxCombo) this.speedMaxCombo = this.speedCombo;
+      this.streakCount++;
+      if (this.streakCount > this.speedMaxCombo) this.speedMaxCombo = this.streakCount;
 
-      // Cập nhật điểm HUD & Multiplayer
-      const scoreEl = document.getElementById('timeline-score-val');
-      const comboEl = document.getElementById('timeline-combo-val');
-      if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
-      if (comboEl) comboEl.innerText = `x${this.speedCombo}`;
+      this.recentResults.push({ status: 'correct', label: item.type === 'timeline' ? item.correctYear : 'ĐÚNG' });
+
+      // Hiệu ứng phát sáng trên nút bấm và thẻ câu hỏi
+      btnEl.classList.add('btn-correct-glow');
+      const cardEl = document.getElementById('speed-event-card');
+      if (cardEl) cardEl.classList.add('correct-pulse');
+
+      // Đồng bộ điểm thời gian thực tới phòng máy chiếu qua MQTT
+      if (this.app && this.app.multiplayer) {
+        this.app.multiplayer.sendScoreUpdate(this.timelineScore);
+      }
+
+      this.updateHUD();
+
+      // Chuyển câu tiếp theo sau 0.75 giây
+      setTimeout(() => {
+        this.loadNextQuestion();
+      }, 750);
+    } else {
+      // TRẢ LỜI SAI -> KÍCH HOẠT HÌNH PHẠT ĐÓNG BĂNG 3S (ANTI-SPAM)
+      soundEngine.playWrong();
+      btnEl.classList.add('btn-wrong', 'error-shake');
+
+      // Trừ điểm và xóa chuỗi combo
+      this.timelineScore = Math.max(0, this.timelineScore - 80);
+      this.streakCount = 0;
+      this.recentResults.push({ status: 'wrong', label: 'SAI' });
 
       if (this.app && this.app.multiplayer) {
         this.app.multiplayer.sendScoreUpdate(this.timelineScore);
       }
 
-      // Hiệu ứng thắng cuộc trên nút và thẻ
-      btnEl.classList.add('btn-correct-glow');
-      const cardEl = document.getElementById('speed-event-card');
-      if (cardEl) cardEl.classList.add('correct-pulse');
+      this.updateHUD();
 
-      // Tự động chuyển sự kiện tiếp theo sau 1 giây
-      setTimeout(() => {
-        this.speedEventIdx++;
-        this.loadSpeedEvent();
-      }, 1000);
-    } else {
-      // Chọn sai mốc năm -> Cảnh báo rung lắc và trừ chuỗi combo
-      soundEngine.playWrong();
-      btnEl.classList.add('error-shake', 'btn-wrong');
-      setTimeout(() => btnEl.classList.remove('error-shake', 'btn-wrong'), 500);
-
-      this.speedCombo = 1;
-      const comboEl = document.getElementById('timeline-combo-val');
-      const comboPill = document.getElementById('timeline-combo-pill');
-      if (comboEl) comboEl.innerText = `x1`;
-      if (comboPill) comboPill.classList.remove('combo-active');
-
-      this.timelineScore = Math.max(0, this.timelineScore - 40);
-      const scoreEl = document.getElementById('timeline-score-val');
-      if (scoreEl) scoreEl.innerText = `${this.timelineScore}đ`;
+      // Kích hoạt bảng đóng băng phạt 3 giây
+      this.triggerFreezePenalty(item);
     }
   }
 
-  handleSpeedTimeout(currentEvent) {
+  // Cơ chế đóng băng phạt 3 giây ngăn chặn triệt để hành vi spam đoán mò
+  triggerFreezePenalty(item) {
+    const overlay = document.getElementById('freeze-overlay');
+    const cdVal = document.getElementById('freeze-countdown-val');
+    if (overlay) overlay.style.display = 'flex';
+
+    let freezeSeconds = 3;
+    if (cdVal) cdVal.innerText = `${freezeSeconds}s`;
+
+    clearInterval(this.freezeTimer);
+    this.freezeTimer = setInterval(() => {
+      freezeSeconds--;
+      if (cdVal) cdVal.innerText = `${freezeSeconds}s`;
+
+      if (freezeSeconds <= 0) {
+        clearInterval(this.freezeTimer);
+        if (overlay) overlay.style.display = 'none';
+        // Hết thời gian phạt -> Lập tức chuyển sang câu hỏi mới để không thể spam lại câu cũ
+        this.loadNextQuestion();
+      }
+    }, 1000);
+  }
+
+  // Xử lý khi hết thời gian 12 giây mà chưa chọn
+  handleQuestionTimeout(item) {
     if (this.isSpeedLocked) return;
     this.isSpeedLocked = true;
     soundEngine.playWrong();
 
-    // Reset combo
-    this.speedCombo = 1;
-    const comboEl = document.getElementById('timeline-combo-val');
-    if (comboEl) comboEl.innerText = `x1`;
+    this.streakCount = 0;
+    this.recentResults.push({ status: 'wrong', label: 'HẾT GIỜ' });
+    this.updateHUD();
 
-    // Hiển thị mốc năm đúng để người chơi quan sát học hỏi
-    const correctBtn = document.querySelector(`.speed-year-btn[data-year="${currentEvent.year}"]`);
-    if (correctBtn) correctBtn.classList.add('btn-reveal-correct');
-
+    // Rung lắc thẻ và hiển thị đáp án đúng để học tập
     const cardEl = document.getElementById('speed-event-card');
     if (cardEl) cardEl.classList.add('error-shake');
 
+    if (item.type === 'timeline') {
+      const correctBtn = document.querySelector(`.speed-year-btn[data-year="${item.correctYear}"]`);
+      if (correctBtn) correctBtn.classList.add('btn-reveal-correct');
+    } else {
+      const correctBtn = document.querySelector(`.quiz-opt-btn[data-index="${item.correctIndex}"]`);
+      if (correctBtn) correctBtn.classList.add('btn-reveal-correct');
+    }
+
     setTimeout(() => {
-      this.speedEventIdx++;
-      this.loadSpeedEvent();
-    }, 1500);
+      this.loadNextQuestion();
+    }, 1200);
   }
 
-  finishTimelineToCipher() {
+  // Kết thúc lượt đấu khi hết 10 phút hoặc Host phát lệnh kết thúc sớm
+  finishAllMiniGames() {
     this.clearSpeedTimer();
+    this.stopMasterTimer();
+    clearInterval(this.freezeTimer);
+    const overlay = document.getElementById('freeze-overlay');
+    if (overlay) overlay.style.display = 'none';
+
     soundEngine.playFanfare();
-    const banner = document.getElementById('timeline-stage-title');
-    if (banner) banner.innerText = "🎉 HOÀN THÀNH MÀN 1! TIẾN VÀO MÀN 2: GIẢI MÃ ĐIỆN TÍN CỬU LONG";
-    setTimeout(() => {
-      this.startCipherGame();
-    }, 1800);
+
+    const totalSec = Math.max(1, Math.floor((Date.now() - (this.gameStartTime || Date.now())) / 1000));
+    const formattedTime = this.formatTime(totalSec);
+
+    const totalFinalScore = this.timelineScore;
+    this.app.score = totalFinalScore;
+
+    // Báo cáo hoàn thành lên máy chủ / phòng thi đấu
+    if (this.app && this.app.multiplayer) {
+      this.app.multiplayer.sendPlayerFinished({
+        score: totalFinalScore,
+        timeSeconds: totalSec,
+        formattedTime: formattedTime
+      });
+    }
+
+    // Hiển thị màn hình vinh danh & kết quả cá nhân
+    this.app.showSummary({
+      score: totalFinalScore,
+      rawScore: totalFinalScore,
+      speedBonus: 0,
+      timeSeconds: totalSec,
+      formattedTime: formattedTime
+    });
+
+    this.gameStartTime = null;
   }
 
   // ================= 2. MINI-GAME: GIẢI MÃ ĐIỆN TÍN =================

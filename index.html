@@ -257,52 +257,75 @@
 
     <!-- ================= 3. MINI-GAME MÀN 1: KÉO THẢ DÒNG THỜI GIAN ================= -->
     <!-- ================= 3. MINI-GAME MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC ================= -->
+    <!-- ================= 3. ĐẤU TRƯỜNG TRI THỨC VÔ TẬN 1930 (10-MINUTE ENDLESS ARENA) ================= -->
     <section id="timeline-game-screen" class="screen">
+      <!-- Lớp đóng băng phạt khi bấm sai (Freeze Penalty Overlay) -->
+      <div id="freeze-overlay" class="freeze-overlay" style="display: none;">
+        <div class="freeze-card animate-appear">
+          <div class="freeze-icon">❄️</div>
+          <h3 class="freeze-title">BỊ PHẠT ĐÓNG BĂNG!</h3>
+          <div class="freeze-countdown" id="freeze-countdown-val">3s</div>
+          <p class="freeze-desc">Bạn vừa chọn sai đáp án lịch sử.<br><strong>Chuỗi Combo bị hủy & bị trừ 80 điểm!</strong></p>
+        </div>
+      </div>
+
       <div class="minigame-container speed-timeline-container">
         <!-- Top HUD -->
         <div class="minigame-header-hud">
           <div class="minigame-title-badge">
-            <span class="badge-icon">⚡</span>
+            <span class="badge-icon">🏛️</span>
             <div>
-              <div class="badge-sub">MÀN 1: GHIM DÒNG THỜI GIAN SIÊU TỐC</div>
-              <h3 id="timeline-stage-title" class="badge-main-title">Chặng 1: Tìm Đường Cứu Nước (1911 - 1925)</h3>
+              <div class="badge-sub">ĐẤU TRƯỜNG TRI THỨC 1930</div>
+              <h3 id="timeline-stage-title" class="badge-main-title">Cuộc Đua 10 Phút: Ánh Sáng Cửu Long</h3>
             </div>
           </div>
           <div class="minigame-stats-row">
-            <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian chơi">
-              <span class="timer-icon">⏱️</span>
-              <strong id="timeline-stopwatch-val">00:00</strong>
+            <!-- Huy hiệu danh hiệu -->
+            <div class="player-rank-chip" id="player-rank-chip" title="Cấp bậc danh hiệu đại biểu">
+              <span id="player-rank-icon">🎖️</span>
+              <strong id="player-rank-name">Tân Đại Biểu</strong>
             </div>
+
+            <!-- Đồng hồ đếm ngược phòng thi -->
+            <div class="minigame-timer-box" id="timeline-timer-box" title="Thời gian còn lại trong phòng thi">
+              <span class="timer-icon">⏱️</span>
+              <strong id="timeline-stopwatch-val">10:00</strong>
+            </div>
+
+            <!-- Điểm số tích lũy -->
             <div class="minigame-score-box">
               <span>ĐIỂM:</span>
               <strong id="timeline-score-val">0đ</strong>
             </div>
+
+            <!-- Chuỗi Combo bốc lửa -->
             <div class="minigame-combo-pill" id="timeline-combo-pill">
               <span>COMBO</span>
               <strong id="timeline-combo-val">x1</strong>
             </div>
-            <button class="btn-minigame-exit" id="btn-timeline-back" title="Về Màn Hình Chính">✖ Rời Game</button>
+
+            <button class="btn-minigame-exit" id="btn-timeline-back" title="Rời cuộc thi về màn hình chính">✖ Rời Game</button>
           </div>
         </div>
 
-        <!-- Thanh đếm ngược siêu tốc từng câu (10 giây) -->
+        <!-- Thanh đếm ngược từng câu (12 giây) -->
         <div class="speed-timer-bar-wrapper">
           <div class="speed-timer-info">
-            <span class="speed-timer-label">⏳ THỜI GIAN GHIM MỐC:</span>
-            <strong class="speed-timer-num" id="speed-countdown-num">10s</strong>
-            <span class="speed-step-indicator" id="speed-step-indicator">Sự kiện 1 / 5</span>
+            <span class="speed-timer-label">⏳ THỜI GIAN TRẢ LỜI:</span>
+            <strong class="speed-timer-num" id="speed-countdown-num">12s</strong>
+            <span class="speed-step-indicator" id="speed-step-indicator">Câu 1 (Chuỗi: 0)</span>
           </div>
           <div class="speed-progress-track">
             <div class="speed-progress-fill" id="speed-progress-fill"></div>
           </div>
         </div>
 
-        <!-- Trục tiến trình các mốc thời gian đã ghim thành công (Timeline Ribbon) -->
+        <!-- Trục mốc đã vượt qua (Timeline Ribbon) -->
         <div class="timeline-pinned-ribbon" id="timeline-pinned-ribbon">
-          <!-- Render tự động các mốc sao vàng đã ghim -->
+          <!-- Render tự động các mốc sao vàng thành tích -->
         </div>
 
-        <!-- Thẻ Sự Kiện Trung Tâm Cần Định Vị (Event Mission Card) -->
+        <!-- Thẻ Thử Thách Trung Tâm (Event / Quiz Question Card) -->
         <div class="speed-event-card" id="speed-event-card">
           <div class="speed-card-glow"></div>
           <div class="speed-card-header">
@@ -310,16 +333,15 @@
             <span class="speed-card-icon" id="speed-card-icon">🚢</span>
           </div>
           <h4 class="speed-event-title" id="speed-event-title">Khởi đầu hành trình bôn ba ba đại dương</h4>
-          <p class="speed-event-desc" id="speed-event-desc">Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô
-            đốc Latouche-Tréville rời Bến cảng Nhà Rồng ra đi tìm con đường cứu nước.</p>
+          <p class="speed-event-desc" id="speed-event-desc">Người thanh niên Nguyễn Tất Thành bước chân lên con tàu Đô đốc Latouche-Tréville...</p>
           <div class="speed-event-hint" id="speed-event-hint">💡 Gợi ý: Bến Nhà Rồng - Tàu buôn Pháp</div>
         </div>
 
-        <!-- Lưới Nút Chọn Mốc Năm (Timeline Year Buttons Grid) -->
-        <div class="speed-years-section">
-          <div class="speed-years-prompt">👇 CHẠM NHANH VÀO NĂM DIỄN RA SỰ KIỆN TRÊN:</div>
+        <!-- Lưới Nút Lựa Chọn (Tự động hiển thị các Năm hoặc 4 Phương Án A-B-C-D) -->
+        <div class="speed-years-section" id="speed-options-section">
+          <div class="speed-years-prompt" id="speed-options-prompt">👇 CHẠM NHANH VÀO ĐÁP ÁN ĐÚNG:</div>
           <div class="speed-years-grid" id="speed-years-grid">
-            <!-- Sinh tự động các nút mốc năm từ minigames.js -->
+            <!-- Sinh tự động các nút từ minigames.js -->
           </div>
         </div>
       </div>
@@ -648,6 +670,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="sound.js"></script>
   <script src="particles.js"></script>
+  <script src="questions.js"></script>
   <script src="minigames.js"></script>
   <script src="multiplayer.js"></script>
   <script src="app.js"></script>

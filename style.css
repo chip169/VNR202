@@ -2886,6 +2886,175 @@ html, body {
   box-shadow: 0 0 20px rgba(244, 67, 54, 0.8) !important;
 }
 
+/* ================= LỚP PHẠT ĐÓNG BĂNG 3S (FREEZE OVERLAY) ================= */
+.freeze-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(4, 14, 32, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.freeze-card {
+  background: linear-gradient(135deg, rgba(16, 36, 68, 0.96) 0%, rgba(8, 18, 38, 0.98) 100%);
+  border: 2px solid #64b5f6;
+  box-shadow: 0 0 45px rgba(33, 150, 243, 0.7), 0 20px 60px rgba(0, 0, 0, 0.95);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+}
+
+.freeze-icon {
+  font-size: 3.5rem;
+  animation: freezeShake 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes freezeShake {
+  0% { transform: scale(1) rotate(-6deg); }
+  100% { transform: scale(1.1) rotate(6deg); }
+}
+
+.freeze-title {
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  color: #90caf9;
+  margin: 12px 0 6px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px rgba(33, 150, 243, 0.9);
+}
+
+.freeze-countdown {
+  font-family: var(--font-heading);
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 25px #64b5f6;
+  line-height: 1.1;
+  margin: 4px 0 10px;
+}
+
+.freeze-desc {
+  font-size: 0.9rem;
+  color: #e0f2fe;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Huy hiệu Danh hiệu đại biểu trên HUD */
+.player-rank-chip {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 12px;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--gold-glow);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+}
+
+.player-rank-chip strong {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Lưới 4 phương án trắc nghiệm A-B-C-D */
+.speed-years-grid.quiz-options-mode {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .speed-years-grid.quiz-options-mode {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.quiz-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 54px;
+  background: linear-gradient(135deg, rgba(32, 22, 18, 0.95) 0%, rgba(20, 14, 12, 0.98) 100%);
+  border: 1.5px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.quiz-opt-btn:hover {
+  border-color: var(--gold-glow);
+  background: rgba(50, 35, 25, 0.95);
+  transform: translateY(-2px);
+}
+
+.quiz-opt-btn:active {
+  transform: scale(0.98);
+}
+
+.quiz-opt-letter {
+  background: var(--gold-primary);
+  color: #000;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quiz-opt-text {
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: var(--parchment);
+  font-weight: 600;
+}
+
+/* Hiệu ứng Combo bốc lửa & Sấm sét */
+.minigame-combo-pill.combo-fire {
+  background: linear-gradient(135deg, #ff9800 0%, #f44336 100%) !important;
+  box-shadow: 0 0 20px rgba(255, 87, 34, 0.8), 0 0 35px rgba(255, 152, 0, 0.5) !important;
+  animation: firePulse 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes firePulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); }
+}
+
+.minigame-combo-pill.combo-lightning {
+  background: linear-gradient(135deg, #00e5ff 0%, #7c4dff 100%) !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.9), 0 0 40px rgba(124, 77, 255, 0.6) !important;
+  animation: lightningPulse 0.4s infinite alternate ease-in-out;
+}
+
+@keyframes lightningPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.12); filter: brightness(1.25); }
+}
+
 
 /* ================= MÀN 2: GIẢI MÃ ĐIỆN TÍN ================= */
 .cipher-columns-grid {
