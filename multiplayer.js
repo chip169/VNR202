@@ -8,6 +8,7 @@ class MultiplayerManager {
     this.client = null;
     this.isConnected = false;
     this.isHost = false;
+    this.createdAsHost = false;
     this.roomId = '1930-VN';
     this.playerId = 'p_' + Math.random().toString(36).substring(2, 9);
     this.playerName = 'Đại biểu Cách mạng';
@@ -112,18 +113,19 @@ class MultiplayerManager {
     }
   }
 
-  // 1. TẠO PHÒNG MỚI (Dành cho Máy Chủ / Màn hình trình chiếu)
+  // 1. TẠO PHÒNG MỚI (Dành riêng cho Máy Chủ / Màn hình máy chiếu lớn)
   createRoom(customRoomId) {
+    this.createdAsHost = true;
     this.isHost = true;
     this.roomId = (customRoomId || '1930-VN').trim().toUpperCase();
-    this.playerName = 'Chủ Tọa (Máy Chủ)';
+    this.playerName = 'Chủ Tọa (Máy Chiếu)';
     this.playerAvatar = '🏛️';
     this.joinedAt = Date.now();
 
     // Đưa ngay bản thân vào danh sách người chơi
     this.players = [this.getMyRecord()];
 
-    // Cập nhật giao diện và render mã QR ngay tức thì
+    // Cập nhật giao diện và render mã QR trên màn chiếu máy chủ
     this.updateLobbyUI();
     this.renderQRCode();
 
@@ -132,21 +134,22 @@ class MultiplayerManager {
     });
   }
 
-  // 2. THAM GIA PHÒNG (Dành cho Điện thoại quét mã QR hoặc nhập mã)
+  // 2. THAM GIA PHÒNG (Dành riêng cho Điện thoại đại biểu - KHÔNG PHẢI MÁY CHIẾU)
   joinRoom(roomId, playerName, playerAvatar, onJoinedCallback) {
+    this.createdAsHost = false;
+    this.isHost = false;
     this.roomId = (roomId || '1930-VN').trim().toUpperCase();
     this.playerName = (playerName || 'Đại biểu').trim();
     this.playerAvatar = playerAvatar || '⭐';
     this.joinedAt = Date.now();
-    this.isHost = false;
 
-    // Đưa ngay bản thân vào danh sách người chơi (hiển thị lập tức 1 đại biểu là chính mình)
+    // Đưa ngay bản thân vào danh sách đại biểu
     this.players = [this.getMyRecord()];
     this.evaluateHost();
 
-    // Cập nhật giao diện và mã QR ngay tức thì
+    // Cập nhật giao diện phòng chờ của đại biểu (không render QR code)
     this.updateLobbyUI();
-    this.renderQRCode();
+    this.updatePlayerWaitUI();
 
     this.connect(() => {
       if (onJoinedCallback) onJoinedCallback();
@@ -203,25 +206,17 @@ class MultiplayerManager {
     }
   }
 
-  // Cơ chế tự động bầu Chủ tọa phòng nếu không có máy chủ chuyên dụng
+  // Cơ chế xác định Chủ tọa phòng (Chỉ máy chiếu tạo phòng mới có quyền Chủ tọa)
   evaluateHost() {
-    // 1. Kiểm tra xem có ai được chỉ định làm Host không
-    const hostPlayer = this.players.find(p => p.isHost);
-    if (hostPlayer) {
-      this.isHost = (hostPlayer.id === this.playerId);
-    } else {
-      // 2. Nếu cả phòng đều vào từ link (không có máy chủ riêng), người vào phòng đầu tiên làm Chủ tọa
-      const sorted = [...this.players].sort((a, b) => {
-        return (a.joinedAt || 0) - (b.joinedAt || 0) || a.id.localeCompare(b.id);
-      });
-      if (sorted.length > 0 && sorted[0].id === this.playerId) {
-        this.isHost = true;
-        const myRec = this.players.find(p => p.id === this.playerId);
-        if (myRec) myRec.isHost = true;
-      } else {
-        this.isHost = false;
-      }
+    if (!this.createdAsHost) {
+      this.isHost = false;
+      const myRec = this.players.find(p => p.id === this.playerId);
+      if (myRec) myRec.isHost = false;
+      return;
     }
+    this.isHost = true;
+    const myRec = this.players.find(p => p.id === this.playerId);
+    if (myRec) myRec.isHost = true;
   }
 
   // Gửi thông điệp JSON lên topic
@@ -510,11 +505,12 @@ class MultiplayerManager {
         this.client.unsubscribe(`vnr202_game/${this.roomId}/#`);
       } catch (e) {}
     }
+    this.createdAsHost = false;
     this.isHost = false;
     this.players = [];
   }
 
-  // Cập nhật giao diện Sảnh Chờ
+  // Cập nhật giao diện Sảnh Chờ Máy Chiếu
   updateLobbyUI() {
     const codeEl = document.getElementById('lobby-room-code-val');
     if (codeEl) codeEl.innerText = `#${this.roomId}`;
@@ -524,7 +520,7 @@ class MultiplayerManager {
       countEl.innerText = `${this.players.length} đại biểu`;
     }
 
-    // Render danh sách thẻ đại biểu trong sảnh
+    // Render danh sách thẻ đại biểu trong sảnh máy chiếu
     const gridEl = document.getElementById('lobby-players-grid');
     if (gridEl) {
       gridEl.innerHTML = '';
@@ -548,26 +544,48 @@ class MultiplayerManager {
       });
     }
 
-    // Khung mã QR: Luôn hiển thị ở sảnh chờ để mọi người có thể quét tham gia
-    const hostQrBox = document.getElementById('lobby-host-qr-box');
-    const clientWaitBox = document.getElementById('lobby-client-wait-box');
+    // Khung nút phát lệnh bắt đầu: chỉ hiển thị cho máy chiếu chủ tọa
     const hostActions = document.getElementById('lobby-host-actions');
+    if (hostActions) {
+      hostActions.style.display = this.isHost ? 'flex' : 'none';
+    }
 
-    if (hostQrBox) hostQrBox.style.display = 'flex';
+    // Luôn đồng bộ giao diện phòng chờ trên điện thoại
+    this.updatePlayerWaitUI();
+  }
 
-    if (this.isHost) {
-      // Nếu là Chủ tọa -> Hiện nút bắt đầu tranh tài, ẩn khung chờ
-      if (clientWaitBox) clientWaitBox.style.display = 'none';
-      if (hostActions) hostActions.style.display = 'flex';
-    } else {
-      // Nếu là Đại biểu khách -> Hiện khung chờ thông báo sẵn sàng, ẩn nút phát lệnh
-      if (clientWaitBox) clientWaitBox.style.display = 'flex';
-      if (hostActions) hostActions.style.display = 'none';
+  // Cập nhật giao diện Màn hình Chờ trên điện thoại đại biểu
+  updatePlayerWaitUI() {
+    const waitRoomCode = document.getElementById('wait-room-code-display');
+    if (waitRoomCode) waitRoomCode.innerText = `#${this.roomId}`;
 
-      const myAvatarEl = document.getElementById('client-my-avatar');
-      const myNameEl = document.getElementById('client-my-name');
-      if (myAvatarEl) myAvatarEl.innerText = this.playerAvatar;
-      if (myNameEl) myNameEl.innerText = `Đại biểu ${this.playerName}`;
+    const myAvatarEl = document.getElementById('wait-my-avatar');
+    const myNameEl = document.getElementById('wait-my-name');
+    if (myAvatarEl) myAvatarEl.innerText = this.playerAvatar || '⭐';
+    if (myNameEl) myNameEl.innerText = `Đại biểu ${this.playerName || 'Khách'}`;
+
+    const rosterCountEl = document.getElementById('wait-roster-count');
+    if (rosterCountEl) {
+      rosterCountEl.innerText = `${this.players.length} đại biểu`;
+    }
+
+    const rosterChipsEl = document.getElementById('wait-roster-chips');
+    if (rosterChipsEl) {
+      rosterChipsEl.innerHTML = '';
+      this.players.forEach((p) => {
+        const chip = document.createElement('div');
+        chip.className = 'wait-chip-item animate-appear';
+        if (p.id === this.playerId) chip.classList.add('is-me');
+        if (p.isHost) chip.classList.add('is-host');
+
+        chip.innerHTML = `
+          <span class="chip-avatar">${p.avatar || '⭐'}</span>
+          <span class="chip-name">${p.name}</span>
+          ${p.isHost ? '<span class="chip-host-badge">Chủ Tọa</span>' : ''}
+          ${p.id === this.playerId ? '<span class="chip-me-badge">Bạn</span>' : ''}
+        `;
+        rosterChipsEl.appendChild(chip);
+      });
     }
   }
 

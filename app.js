@@ -188,7 +188,7 @@ class HistoricalQuizApp {
     // Ẩn thanh HUD góc trên khi chơi mini-game hoặc ở màn đăng ký đại biểu / sảnh chờ
     const topHud = document.querySelector('.top-hud-bar');
     if (topHud) {
-      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen' || screenId === 'join-screen' || screenId === 'lobby-screen') {
+      if (screenId === 'timeline-game-screen' || screenId === 'cipher-game-screen' || screenId === 'join-screen' || screenId === 'lobby-screen' || screenId === 'player-wait-screen') {
         topHud.style.display = 'none';
       } else {
         topHud.style.display = 'flex';
@@ -233,7 +233,7 @@ class HistoricalQuizApp {
       }
     });
 
-    // 1. Nút "THAM GIA HỘI NGHỊ 1930"
+    // 1. Nút "MÁY CHIẾU: TẠO PHÒNG QR"
     const playBtn = document.getElementById('btn-main-play');
     if (playBtn) {
       playBtn.addEventListener('click', () => {
@@ -242,6 +242,26 @@ class HistoricalQuizApp {
         this.mode = 'multiplayer';
         this.switchScreen('lobby-screen');
         this.multiplayer.createRoom('1930-VN');
+      });
+    }
+
+    // 1b. Nút "ĐIỆN THOẠI VÀO PHÒNG"
+    const phoneJoinBtn = document.getElementById('btn-mode-phone-join');
+    if (phoneJoinBtn) {
+      phoneJoinBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.openJoinScreen('1930-VN');
+      });
+    }
+
+    // 1c. Nút "CHƠI ĐƠN LUYỆN TẬP"
+    const soloPlayBtn = document.getElementById('btn-mode-solo-play');
+    if (soloPlayBtn) {
+      soloPlayBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        soundEngine.startAmbient();
+        this.mode = 'solo';
+        this.miniGame.startTimelineGame();
       });
     }
 
@@ -265,7 +285,7 @@ class HistoricalQuizApp {
       });
     }
 
-    // 4. Submit Form Đăng Ký Đại Biểu (Tham gia phòng)
+    // 4. Submit Form Đăng Ký Đại Biểu (Tham gia phòng -> Vào Màn Hình Chờ Đại Biểu)
     const joinForm = document.getElementById('join-room-form');
     if (joinForm) {
       joinForm.addEventListener('submit', (e) => {
@@ -292,8 +312,19 @@ class HistoricalQuizApp {
         soundEngine.playFanfare();
         this.mode = 'multiplayer';
         this.multiplayer.joinRoom(roomCode, playerName, this.selectedAvatar, () => {
-          this.switchScreen('lobby-screen');
+          // Điện thoại chuyển vào Màn hình chờ đại biểu (KHÔNG vào màn chiếu QR)
+          this.switchScreen('player-wait-screen');
         });
+      });
+    }
+
+    // 4b. Nút Rời phòng từ Màn hình chờ đại biểu
+    const waitExitBtn = document.getElementById('btn-wait-exit');
+    if (waitExitBtn) {
+      waitExitBtn.addEventListener('click', () => {
+        soundEngine.playClick();
+        this.multiplayer.leaveRoom();
+        this.switchScreen('start-screen');
       });
     }
 

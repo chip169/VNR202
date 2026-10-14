@@ -1203,6 +1203,262 @@ html, body {
   border-color: #fff;
 }
 
+/* ================= 2.5. PLAYER WAIT SCREEN (DÀNH CHO ĐIỆN THOẠI) ================= */
+.player-wait-modal-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.player-wait-card {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(155deg, rgba(28, 18, 15, 0.96) 0%, rgba(14, 9, 8, 0.98) 100%);
+  border: 2px solid var(--gold-primary);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 193, 7, 0.2);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInPlayer 0.4s ease;
+  backdrop-filter: blur(12px);
+}
+
+.player-wait-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  padding-bottom: 12px;
+}
+
+.wait-header-badge {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+  letter-spacing: 0.5px;
+}
+
+.wait-room-code-badge {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  color: #fff;
+}
+
+.wait-room-code-badge strong {
+  color: var(--gold-glow);
+  font-family: monospace;
+  font-size: 0.95rem;
+  margin-left: 4px;
+}
+
+.player-self-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 18px;
+  padding: 18px 14px;
+}
+
+.player-hero-avatar {
+  font-size: 3.2rem;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(218, 165, 32, 0.3) 0%, rgba(183, 28, 28, 0.5) 100%);
+  border: 2px solid var(--gold-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+  animation: pulseAvatarGlow 2.5s infinite alternate;
+}
+
+@keyframes pulseAvatarGlow {
+  0% { transform: scale(0.98); box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+  100% { transform: scale(1.04); box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+}
+
+.player-hero-name {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: #fff;
+  margin: 0;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.player-hero-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(46, 125, 50, 0.25);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #a5d6a7;
+  letter-spacing: 0.5px;
+}
+
+.status-dot-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
+  animation: pulseDot 1.4s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 12px #4caf50; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.player-wait-instruction-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(13, 71, 161, 0.25) 100%);
+  border: 1px solid rgba(100, 181, 246, 0.4);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.instruction-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.instruction-text strong {
+  color: #90caf9;
+  font-size: 0.9rem;
+  font-family: var(--font-heading);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.instruction-text p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #e3f2fd;
+  line-height: 1.4;
+}
+
+.player-wait-roster-preview {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--parchment-dim);
+  font-weight: 700;
+}
+
+.preview-header strong {
+  color: var(--gold-primary);
+}
+
+.preview-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.wait-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 22, 18, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 18px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  color: #fff;
+}
+
+.wait-chip-item.is-me {
+  border-color: var(--gold-glow);
+  background: rgba(183, 28, 28, 0.45);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.wait-chip-item.is-host {
+  border-color: #ffd700;
+}
+
+.chip-avatar {
+  font-size: 1rem;
+}
+
+.chip-name {
+  font-weight: 600;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-host-badge {
+  font-size: 0.65rem;
+  background: #ffd700;
+  color: #1a0a04;
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-weight: 800;
+}
+
+.chip-me-badge {
+  font-size: 0.65rem;
+  background: var(--crimson-badge);
+  color: #fff;
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-weight: 700;
+}
+
+.player-wait-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.player-wait-footer .btn-secondary {
+  width: 100%;
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
 /* ================= 3. BATTLE ARENA SCREEN ================= */
 .battle-arena-wrapper {
   width: 100%;
