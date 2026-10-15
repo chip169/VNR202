@@ -559,15 +559,10 @@ class HistoricalQuizApp {
       });
     }
 
-    // 10b. Nút Mở & Đóng Modal Hướng Dẫn Chơi Game (Nút ? trang chính & HUD)
-    const mainHelpBtn = document.getElementById('btn-main-help');
-    if (mainHelpBtn) {
-      mainHelpBtn.addEventListener('click', () => this.openGameGuideModal('join'));
-    }
-
+    // 10b. Nút Mở & Đóng Modal Hướng Dẫn Chơi Game (Nút ❓ trên HUD)
     const hudGuideBtn = document.getElementById('btn-guide-hud');
     if (hudGuideBtn) {
-      hudGuideBtn.addEventListener('click', () => this.openGameGuideModal('join'));
+      hudGuideBtn.addEventListener('click', () => this.openGameGuideModal('stage1'));
     }
 
     const closeGuideBtn = document.getElementById('btn-close-guide');
@@ -589,7 +584,6 @@ class HistoricalQuizApp {
 
     // Tabs trong Modal Hướng Dẫn Chơi Game
     const guideTabs = [
-      { id: 'tab-btn-join', key: 'join' },
       { id: 'tab-btn-stage1', key: 'stage1' },
       { id: 'tab-btn-stage2', key: 'stage2' },
       { id: 'tab-btn-rules', key: 'rules' }
@@ -1476,7 +1470,7 @@ class HistoricalQuizApp {
   }
 
   // Mở modal Hướng dẫn chơi game
-  openGameGuideModal(tabKey = 'join') {
+  openGameGuideModal(tabKey = 'stage1') {
     soundEngine.playClick();
     const modal = document.getElementById('modal-game-guide');
     if (modal) {
@@ -1495,7 +1489,6 @@ class HistoricalQuizApp {
   // Chuyển tab trong modal Hướng dẫn
   switchGuideTab(tabKey) {
     const tabMapping = [
-      { key: 'join', btn: 'tab-btn-join', pane: 'pane-guide-join' },
       { key: 'stage1', btn: 'tab-btn-stage1', pane: 'pane-guide-stage1' },
       { key: 'stage2', btn: 'tab-btn-stage2', pane: 'pane-guide-stage2' },
       { key: 'rules', btn: 'tab-btn-rules', pane: 'pane-guide-rules' }
