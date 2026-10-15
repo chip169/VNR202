@@ -534,18 +534,10 @@ html, body {
   margin-top: 10px;
 }
 
-.start-actions-group {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-}
-
 .btn-art-play-trigger {
   position: relative;
-  width: 320px;
-  max-width: calc(90vw - 68px);
+  width: 380px;
+  max-width: 90vw;
   height: 54px;
   background: linear-gradient(135deg, rgba(183, 28, 28, 0.55) 0%, rgba(30, 20, 18, 0.85) 100%);
   border: 1.5px solid var(--gold-primary);
@@ -558,45 +550,6 @@ html, body {
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: none;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 87, 34, 0.5);
-}
-
-.btn-help-trigger {
-  position: relative;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(50, 28, 20, 0.95) 0%, rgba(22, 12, 10, 0.98) 100%);
-  border: 1.5px solid var(--gold-primary);
-  color: var(--gold-glow);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(255, 193, 7, 0.4);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  outline: none;
-  flex-shrink: 0;
-}
-
-.help-question-mark {
-  font-family: var(--font-heading);
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: var(--gold-glow);
-  text-shadow: 0 0 12px rgba(255, 215, 0, 0.85);
-  line-height: 1;
-  transform: translateY(-1px);
-}
-
-.btn-help-trigger:hover {
-  transform: scale(1.1) rotate(6deg);
-  border-color: #ffe082;
-  box-shadow: 0 6px 28px rgba(255, 193, 7, 0.7), 0 0 24px rgba(255, 215, 0, 0.8);
-  background: linear-gradient(135deg, rgba(85, 42, 28, 0.98) 0%, rgba(38, 18, 14, 0.98) 100%);
-}
-
-.btn-help-trigger:active {
-  transform: scale(0.95);
 }
 
 .btn-trigger-text {
