@@ -528,36 +528,6 @@ class HistoricalQuizApp {
       });
     }
 
-    // 9. Nút mở Bảng Xếp Hạng từ thanh Top HUD & Start Screen
-    const hudLbBtn = document.getElementById('btn-leaderboard-hud');
-    if (hudLbBtn) {
-      hudLbBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        this.openLeaderboardModal(this.multiplayer.players.length > 1 ? 'room' : 'hall');
-      });
-    }
-
-    const startLbBtn = document.getElementById('btn-start-leaderboard');
-    if (startLbBtn) {
-      startLbBtn.addEventListener('click', () => {
-        soundEngine.playClick();
-        this.openLeaderboardModal('hall');
-      });
-    }
-
-    // 10. Đóng Modal Bảng Xếp Hạng
-    const closeLbBtn = document.getElementById('btn-close-leaderboard');
-    if (closeLbBtn) closeLbBtn.addEventListener('click', () => this.closeLeaderboardModal());
-
-    const closeLbFoot = document.getElementById('btn-close-leaderboard-footer');
-    if (closeLbFoot) closeLbFoot.addEventListener('click', () => this.closeLeaderboardModal());
-
-    const lbModalOverlay = document.getElementById('modal-leaderboard');
-    if (lbModalOverlay) {
-      lbModalOverlay.addEventListener('click', (e) => {
-        if (e.target === lbModalOverlay) this.closeLeaderboardModal();
-      });
-    }
 
     // 10b. Nút Mở & Đóng Modal Hướng Dẫn Chơi Game (Nút ❓ trên HUD)
     const hudGuideBtn = document.getElementById('btn-guide-hud');
@@ -599,26 +569,6 @@ class HistoricalQuizApp {
       }
     });
 
-    // 11. Tabs trong Modal Bảng Xếp Hạng
-    const modalTabRoom = document.getElementById('modal-tab-room');
-    const modalTabHall = document.getElementById('modal-tab-hall');
-    if (modalTabRoom && modalTabHall) {
-      modalTabRoom.addEventListener('click', () => {
-        soundEngine.playClick();
-        modalTabRoom.classList.add('active');
-        modalTabHall.classList.remove('active');
-        this.activeModalTab = 'room';
-        this.renderLeaderboard(document.getElementById('modal-leaderboard-list'), 'room');
-      });
-
-      modalTabHall.addEventListener('click', () => {
-        soundEngine.playClick();
-        modalTabHall.classList.add('active');
-        modalTabRoom.classList.remove('active');
-        this.activeModalTab = 'hall';
-        this.renderLeaderboard(document.getElementById('modal-leaderboard-list'), 'hall');
-      });
-    }
 
     // 12. Tabs trong Summary Screen
     const sumTabRoom = document.getElementById('sum-tab-room');
@@ -1439,34 +1389,9 @@ class HistoricalQuizApp {
     if (sumPodium && this.activeSummaryTab === 'room') {
       this.renderLeaderboard(sumPodium, 'room');
     }
-    const modalList = document.getElementById('modal-leaderboard-list');
-    if (modalList && this.activeModalTab === 'room') {
-      this.renderLeaderboard(modalList, 'room');
-    }
     if (this.currentScreen === 'podium-screen') {
       this.renderPodiumContent();
     }
-  }
-
-  openLeaderboardModal(tab = 'room') {
-    this.activeModalTab = tab;
-    const modal = document.getElementById('modal-leaderboard');
-    const tabRoom = document.getElementById('modal-tab-room');
-    const tabHall = document.getElementById('modal-tab-hall');
-    const listEl = document.getElementById('modal-leaderboard-list');
-
-    if (tabRoom && tabHall) {
-      tabRoom.classList.toggle('active', tab === 'room');
-      tabHall.classList.toggle('active', tab === 'hall');
-    }
-
-    this.renderLeaderboard(listEl, tab);
-    if (modal) modal.style.display = 'flex';
-  }
-
-  closeLeaderboardModal() {
-    const modal = document.getElementById('modal-leaderboard');
-    if (modal) modal.style.display = 'none';
   }
 
   // Mở modal Hướng dẫn chơi game

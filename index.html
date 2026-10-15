@@ -24,8 +24,6 @@
     <!-- Thanh HUD trên cùng -->
     <header class="top-hud-bar">
       <div class="hud-actions">
-        <button id="btn-leaderboard-hud" class="btn-icon btn-hud-leaderboard" title="Bảng Xếp Hạng Kỷ Lục">🏆
-          BXH</button>
         <button id="btn-play-intro" class="btn-icon btn-hud-intro" title="Xem Video Intro Điện Ảnh">🎬 Xem
           Intro</button>
         <button id="btn-guide-hud" class="btn-icon btn-hud-guide" title="Xem Hướng Dẫn Chơi Game">❓</button>
@@ -673,42 +671,6 @@
       </div>
     </section>
 
-    <!-- ================= 5. MODAL BẢNG XẾP HẠNG TOÀN CỤC ================= -->
-    <div id="modal-leaderboard" class="modal-overlay" style="display: none;">
-      <div class="modal-card leaderboard-modal">
-        <div class="modal-header">
-          <div class="modal-title-group">
-            <span class="modal-icon">🏆</span>
-            <div>
-              <h3>BẢNG XẾP HẠNG ĐẠI BIỂU CỬU LONG</h3>
-              <small>Vinh danh tốc độ và sự chính xác của các đại biểu (1930)</small>
-            </div>
-          </div>
-          <button class="btn-modal-close" id="btn-close-leaderboard" title="Đóng">✖</button>
-        </div>
-
-        <div class="modal-tabs">
-          <button type="button" class="modal-tab-btn active" id="modal-tab-room">🏛️ Phòng Thi Đấu</button>
-          <button type="button" class="modal-tab-btn" id="modal-tab-hall">⭐ Bảng Vàng Kỷ Lục</button>
-        </div>
-
-        <div class="leaderboard-table-container">
-          <div class="lb-table-head">
-            <span class="col-rank">Hạng</span>
-            <span class="col-player">Đại Biểu</span>
-            <span class="col-time">Thời Gian</span>
-            <span class="col-score">Điểm Số</span>
-          </div>
-          <div class="leaderboard-rows-list" id="modal-leaderboard-list">
-            <!-- Dynamic rows -->
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" id="btn-close-leaderboard-footer">Đóng</button>
-        </div>
-      </div>
-    </div>
 
     <!-- ================= 5.5. MODAL HƯỚNG DẪN CHƠI GAME (GAME GUIDE) ================= -->
     <div id="modal-game-guide" class="modal-overlay" style="display: none;">

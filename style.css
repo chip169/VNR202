@@ -131,26 +131,6 @@ html, body {
   box-shadow: 0 0 20px rgba(255, 87, 34, 0.7);
 }
 
-.btn-hud-leaderboard {
-  width: auto !important;
-  border-radius: 20px !important;
-  padding: 0 14px !important;
-  font-family: var(--font-heading);
-  font-size: 0.85rem !important;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  gap: 6px;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(40, 28, 20, 0.9) 100%) !important;
-  border: 1px solid var(--gold-primary) !important;
-  color: var(--gold-glow) !important;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
-}
-
-.btn-hud-leaderboard:hover {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(60, 40, 25, 0.95) 100%) !important;
-  box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
-  transform: translateY(-1px);
-}
 
 .btn-icon {
   background: rgba(30, 20, 18, 0.7);
