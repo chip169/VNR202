@@ -559,6 +559,52 @@ class HistoricalQuizApp {
       });
     }
 
+    // 10b. Nút Mở & Đóng Modal Hướng Dẫn Chơi Game (Nút ? trang chính & HUD)
+    const mainHelpBtn = document.getElementById('btn-main-help');
+    if (mainHelpBtn) {
+      mainHelpBtn.addEventListener('click', () => this.openGameGuideModal('join'));
+    }
+
+    const hudGuideBtn = document.getElementById('btn-guide-hud');
+    if (hudGuideBtn) {
+      hudGuideBtn.addEventListener('click', () => this.openGameGuideModal('join'));
+    }
+
+    const closeGuideBtn = document.getElementById('btn-close-guide');
+    if (closeGuideBtn) {
+      closeGuideBtn.addEventListener('click', () => this.closeGameGuideModal());
+    }
+
+    const closeGuideFoot = document.getElementById('btn-close-guide-footer');
+    if (closeGuideFoot) {
+      closeGuideFoot.addEventListener('click', () => this.closeGameGuideModal());
+    }
+
+    const guideOverlay = document.getElementById('modal-game-guide');
+    if (guideOverlay) {
+      guideOverlay.addEventListener('click', (e) => {
+        if (e.target === guideOverlay) this.closeGameGuideModal();
+      });
+    }
+
+    // Tabs trong Modal Hướng Dẫn Chơi Game
+    const guideTabs = [
+      { id: 'tab-btn-join', key: 'join' },
+      { id: 'tab-btn-stage1', key: 'stage1' },
+      { id: 'tab-btn-stage2', key: 'stage2' },
+      { id: 'tab-btn-rules', key: 'rules' }
+    ];
+
+    guideTabs.forEach(tab => {
+      const el = document.getElementById(tab.id);
+      if (el) {
+        el.addEventListener('click', () => {
+          soundEngine.playClick();
+          this.switchGuideTab(tab.key);
+        });
+      }
+    });
+
     // 11. Tabs trong Modal Bảng Xếp Hạng
     const modalTabRoom = document.getElementById('modal-tab-room');
     const modalTabHall = document.getElementById('modal-tab-hall');
@@ -1026,8 +1072,11 @@ class HistoricalQuizApp {
   showPodiumScreen() {
     soundEngine.playFanfare();
     this.switchScreen('podium-screen');
+    this.renderPodiumContent();
+  }
 
-    const lb = this.multiplayer.getRoomLeaderboard();
+  renderPodiumContent() {
+    const lb = this.multiplayer ? this.multiplayer.getRoomLeaderboard() : [];
     const top5 = lb.slice(0, 5);
     const total = lb.length;
     const finished = lb.filter(p => p.isFinished).length;
@@ -1066,7 +1115,7 @@ class HistoricalQuizApp {
           <div class="podium-player-card animate-appear">
             <div class="podium-avatar-big">${player.avatar || '⭐'}</div>
             <div class="podium-player-name">${player.name}</div>
-            <div class="podium-player-score">${player.score.toLocaleString()}đ</div>
+            <div class="podium-player-score">${(player.score || 0).toLocaleString()}đ</div>
             ${player.formattedTime ? `<div class="podium-player-time">⏱️ ${player.formattedTime}</div>` : ''}
           </div>
           <div class="podium-base" style="height:var(--pillar-h);">
@@ -1081,25 +1130,92 @@ class HistoricalQuizApp {
     const restEl = document.getElementById('podium-rest-list');
     if (restEl) {
       restEl.innerHTML = '';
-      top5.slice(3).forEach((player, idx) => {
-        const row = document.createElement('div');
-        row.className = 'podium-rest-row animate-appear';
-        row.innerHTML = `
-          <span class="podium-rest-rank">${idx + 4}.</span>
-          <span class="podium-rest-avatar">${player.avatar || '⭐'}</span>
-          <span class="podium-rest-name">${player.name}</span>
-          <span class="podium-rest-time">${player.formattedTime || '--:--'}</span>
-          <strong class="podium-rest-score">${player.score.toLocaleString()}đ</strong>
-        `;
-        restEl.appendChild(row);
-      });
+      const top4and5 = top5.slice(3, 5);
+      if (top4and5.length === 0) {
+        restEl.style.display = 'none';
+      } else {
+        restEl.style.display = 'flex';
+        top4and5.forEach((player, idx) => {
+          const rankNum = idx + 4;
+          const row = document.createElement('div');
+          row.className = 'podium-rest-row animate-appear';
+          row.innerHTML = `
+            <span class="podium-rest-rank">🎖️ #${rankNum}</span>
+            <span class="podium-rest-avatar">${player.avatar || '⭐'}</span>
+            <span class="podium-rest-name">${player.name}</span>
+            <span class="podium-rest-time">${player.formattedTime || '--:--'}</span>
+            <strong class="podium-rest-score">${(player.score || 0).toLocaleString()}đ</strong>
+          `;
+          restEl.appendChild(row);
+        });
+      }
     }
+
+    // Render BẢNG TỔNG SẮP TẤT CẢ NGƯỜI CHƠI KÈM ĐIỂM SỐ
+    this.renderPodiumAllPlayers(lb);
+  }
+
+  renderPodiumAllPlayers(lb) {
+    const allListEl = document.getElementById('podium-all-list');
+    const counterEl = document.getElementById('podium-all-counter');
+    if (!allListEl) return;
+
+    if (counterEl) {
+      counterEl.innerText = `${lb.length} đại biểu`;
+    }
+
+    allListEl.innerHTML = '';
+    if (!lb || lb.length === 0) {
+      allListEl.innerHTML = `
+        <div class="podium-empty-state">
+          <span>Chưa có dữ liệu đại biểu tham gia.</span>
+        </div>
+      `;
+      return;
+    }
+
+    lb.forEach((player, idx) => {
+      const row = document.createElement('div');
+      row.className = 'podium-all-row';
+      if (idx < 5) row.classList.add('top-honor-row');
+      const isMe = this.multiplayer && player.id === this.multiplayer.playerId;
+      if (isMe) row.classList.add('highlight-me');
+
+      let rankBadge = `#${idx + 1}`;
+      if (idx === 0) rankBadge = '🥇';
+      else if (idx === 1) rankBadge = '🥈';
+      else if (idx === 2) rankBadge = '🥉';
+      else if (idx === 3) rankBadge = '4️⃣';
+      else if (idx === 4) rankBadge = '5️⃣';
+
+      const statusHtml = player.isFinished
+        ? '<span class="status-badge-fin">🏁 Về đích</span>'
+        : '<span class="status-badge-prog">⏳ Đang thi</span>';
+
+      const timeText = player.formattedTime && player.formattedTime !== '--:--'
+        ? `⏱️ ${player.formattedTime}`
+        : '--:--';
+
+      row.innerHTML = `
+        <span class="pal-col-rank rank-${idx + 1}">${rankBadge}</span>
+        <div class="pal-col-player">
+          <span class="pal-player-avatar">${player.avatar || '⭐'}</span>
+          <span class="pal-player-name">${player.name} ${isMe ? '<strong class="me-tag">(Bạn)</strong>' : ''} ${idx < 5 ? '<span class="pal-top5-tag">Top 5</span>' : ''}</span>
+        </div>
+        <div class="pal-col-status">${statusHtml}</div>
+        <span class="pal-col-time">${timeText}</span>
+        <strong class="pal-col-score">${(player.score || 0).toLocaleString()}đ</strong>
+      `;
+
+      allListEl.appendChild(row);
+    });
   }
 
   // Xử lý khi nhận GAME_OVER từ Host (điện thoại người chơi)
   onGameOverReceived(leaderboard) {
-    // Nếu người chơi đã hoàn thành và đang ở màn summary thì tuyệt đối giữ nguyên không ghi đè!
+    // Nếu người chơi đã hoàn thành và đang ở màn summary thì cập nhật lại bảng xếp hạng live với đầy đủ điểm số
     if (this.currentScreen === 'summary-screen') {
+      this.updateLiveLeaderboard();
       return;
     }
 
@@ -1264,8 +1380,8 @@ class HistoricalQuizApp {
     let items = [];
 
     if (tabType === 'room') {
-      // Lấy từ phòng thi đấu trực tiếp (Multiplayer) - Hiển thị Top 5
-      items = this.multiplayer ? this.multiplayer.getRoomLeaderboard().slice(0, 5) : [];
+      // Lấy từ phòng thi đấu trực tiếp (Multiplayer) - Hiển thị TẤT CẢ người chơi, tuyên dương Top 5
+      items = this.multiplayer ? this.multiplayer.getRoomLeaderboard() : [];
       if (items.length === 0 && this.score > 0) {
         // Nếu chơi đơn thì hiển thị kết quả thật của người chơi vừa thi đấu
         items = [{
@@ -1297,20 +1413,23 @@ class HistoricalQuizApp {
 
       const isMe = (this.multiplayer && item.id === this.multiplayer.playerId) || item.isCurrentPlayer;
       if (isMe) row.classList.add('highlight');
+      if (idx < 5) row.classList.add('top-honor-player');
 
       let rankBadge = `#${idx + 1}`;
       if (idx === 0) rankBadge = '🥇';
       else if (idx === 1) rankBadge = '🥈';
       else if (idx === 2) rankBadge = '🥉';
+      else if (idx === 3) rankBadge = '4️⃣';
+      else if (idx === 4) rankBadge = '5️⃣';
 
-      const timeText = item.formattedTime ? `⏱️ ${item.formattedTime}` : (item.isFinished ? 'Hoàn thành' : 'Đang giải mã...');
-      const scoreText = `${item.score.toLocaleString()}đ`;
+      const timeText = item.formattedTime ? `⏱️ ${item.formattedTime}` : (item.isFinished ? 'Hoàn thành' : 'Đang thi...');
+      const scoreText = `${(item.score || 0).toLocaleString()}đ`;
 
       row.innerHTML = `
         <span class="col-rank rank-${idx + 1}">${rankBadge}</span>
         <div class="col-player">
           <span class="player-mini-avatar">${item.avatar || '⭐'}</span>
-          <span class="player-mini-name">${item.name} ${isMe ? '<strong class="me-tag">(Bạn)</strong>' : ''}</span>
+          <span class="player-mini-name">${item.name} ${isMe ? '<strong class="me-tag">(Bạn)</strong>' : ''} ${idx < 5 && tabType === 'room' ? '<span class="pal-top5-tag">Top 5</span>' : ''}</span>
         </div>
         <span class="col-time">${timeText}</span>
         <strong class="col-score">${scoreText}</strong>
@@ -1329,6 +1448,9 @@ class HistoricalQuizApp {
     const modalList = document.getElementById('modal-leaderboard-list');
     if (modalList && this.activeModalTab === 'room') {
       this.renderLeaderboard(modalList, 'room');
+    }
+    if (this.currentScreen === 'podium-screen') {
+      this.renderPodiumContent();
     }
   }
 
@@ -1351,6 +1473,41 @@ class HistoricalQuizApp {
   closeLeaderboardModal() {
     const modal = document.getElementById('modal-leaderboard');
     if (modal) modal.style.display = 'none';
+  }
+
+  // Mở modal Hướng dẫn chơi game
+  openGameGuideModal(tabKey = 'join') {
+    soundEngine.playClick();
+    const modal = document.getElementById('modal-game-guide');
+    if (modal) {
+      modal.style.display = 'flex';
+      this.switchGuideTab(tabKey);
+    }
+  }
+
+  // Đóng modal Hướng dẫn chơi game
+  closeGameGuideModal() {
+    soundEngine.playClick();
+    const modal = document.getElementById('modal-game-guide');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // Chuyển tab trong modal Hướng dẫn
+  switchGuideTab(tabKey) {
+    const tabMapping = [
+      { key: 'join', btn: 'tab-btn-join', pane: 'pane-guide-join' },
+      { key: 'stage1', btn: 'tab-btn-stage1', pane: 'pane-guide-stage1' },
+      { key: 'stage2', btn: 'tab-btn-stage2', pane: 'pane-guide-stage2' },
+      { key: 'rules', btn: 'tab-btn-rules', pane: 'pane-guide-rules' }
+    ];
+
+    tabMapping.forEach(t => {
+      const btnEl = document.getElementById(t.btn);
+      const paneEl = document.getElementById(t.pane);
+      const isActive = t.key === tabKey;
+      if (btnEl) btnEl.classList.toggle('active', isActive);
+      if (paneEl) paneEl.classList.toggle('active', isActive);
+    });
   }
 
   // ================= MÀN HÌNH TỔNG KẾT VÀ VINH DANH =================

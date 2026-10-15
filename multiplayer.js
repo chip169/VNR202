@@ -665,6 +665,19 @@ class MultiplayerManager {
           // Chủ tọa (máy chiếu) KHÔNG xử lý ở đây vì đã hiển thị podium trên màn chiếu
           if (this.isHost || data.senderId === this.playerId) break;
           console.log('🏁 Nhận GAME_OVER từ chủ tọa');
+          if (Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
+            data.leaderboard.forEach(p => {
+              const existing = this.players.find(x => x.id === p.id);
+              if (existing) {
+                existing.score = p.score;
+                existing.formattedTime = p.formattedTime;
+                existing.timeSeconds = p.timeSeconds;
+                existing.isFinished = p.isFinished;
+              } else {
+                this.players.push(p);
+              }
+            });
+          }
           if (this.app && typeof this.app.onGameOverReceived === 'function') {
             this.app.onGameOverReceived(data.leaderboard || []);
           }
@@ -1004,7 +1017,7 @@ class MultiplayerManager {
     this.publishMessage(`vnr202_game/${this.roomId}/events`, {
       type: 'GAME_OVER',
       senderId: this.playerId,
-      leaderboard: this.getRoomLeaderboard().slice(0, 5)
+      leaderboard: this.getRoomLeaderboard()
     });
   }
 
